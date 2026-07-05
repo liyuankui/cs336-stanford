@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+.pytest_cache/
+
+# ML
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+wandb/
+runs/
+checkpoints/
+
+# Data (大文件不提交)
+data/
+*.bin
+*.idx
+*.tar
+*.zst
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Notebook
+.ipynb_checkpoints/
+
+# Modal
+.modal/
