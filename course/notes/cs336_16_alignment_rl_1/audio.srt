@@ -1,0 +1,3892 @@
+1
+00:00:05,120 --> 00:00:13,039
+Okay. Uh we'll get started. Um this is the second of the post training
+
+2
+00:00:13,039 --> 00:00:16,640
+lectures and we're going to talk about well we're going to finish off the
+
+3
+00:00:16,640 --> 00:00:22,879
+lecture from from Tuesday first. Uh whatever remaining content we have. Um and then we'll talk about reinforcement
+
+4
+00:00:22,879 --> 00:00:30,960
+learning from verifiable rewards kind of the new exciting thing that's been happening over maybe the last six months
+
+5
+00:00:30,960 --> 00:00:35,759
+or so. um and really powering all of these reasoning models that you kind of
+
+6
+00:00:35,759 --> 00:00:39,920
+see uh dominating the landscape. So, uh, before I get into the verifiable rewards
+
+7
+00:00:39,920 --> 00:00:45,200
+part, um, the exciting, you know, math RL content, um, I'm going to go back and
+
+8
+00:00:45,200 --> 00:00:49,359
+I'm going to finish off RLHF, right? So, this is, uh, a very very quick recap of
+
+9
+00:00:49,359 --> 00:00:54,799
+the last few slides from Tuesday's lecture, right? So, we want to do reinforcement learning from human
+
+10
+00:00:54,799 --> 00:01:00,159
+feedback, which is the setting where we observe pair-wise preference data, like which of the two responses are better,
+
+11
+00:01:00,159 --> 00:01:05,280
+and we'd like to get a language model policy that sort of maximizes some sort
+
+12
+00:01:05,280 --> 00:01:12,319
+of underlying reward. um for this preference data, right? Um and if you remember, DPO is this algorithm that
+
+13
+00:01:12,319 --> 00:01:18,000
+allows to allows us to optimize this reinforcement learning objective. And this objective is hard because our
+
+14
+00:01:18,000 --> 00:01:21,359
+language model, the policy, so to speak, is is on the bottom of this expectation,
+
+15
+00:01:21,359 --> 00:01:27,359
+right? You're sampling from your language model. You're not just maximizing uh the likelihood under the
+
+16
+00:01:27,359 --> 00:01:30,640
+language model. Um, and the way we're going to do this, um, you know, if you
+
+17
+00:01:30,640 --> 00:01:35,680
+remember the derivation is that we're going to, you know, make the nonparametric assumption that our policy
+
+18
+00:01:35,680 --> 00:01:40,000
+class is the set of all functions. We're going to rewrite the reward as a ratio
+
+19
+00:01:40,000 --> 00:01:43,840
+of the policies. Um, and then plug that in to the Bradley Terry objective. And
+
+20
+00:01:43,840 --> 00:01:49,200
+so what we're going to do is we're going to find a policy such that sort of the
+
+21
+00:01:49,200 --> 00:01:55,920
+implied reward maximizes the probability of seeing sort of the references uh, sorry, the pair-wise preferences that we
+
+22
+00:01:55,920 --> 00:02:02,159
+see, right? Um so now this is great because it's basically supervised learning on a kind of alternatively
+
+23
+00:02:02,159 --> 00:02:09,118
+parameterized objective. Um which is nice. Um DPO updates have this following
+
+24
+00:02:09,118 --> 00:02:14,400
+form. Um the reason why you know DPO has kind of took the world by storm for a
+
+25
+00:02:14,400 --> 00:02:17,360
+bit um a year ago or so um is that it can be written in this very nice form
+
+26
+00:02:17,360 --> 00:02:20,719
+where you know what you're going to do is you're going to take these gradient
+
+27
+00:02:20,719 --> 00:02:23,840
+steps which are going to be you know multiplied by beta. That's kind of your
+
+28
+00:02:23,840 --> 00:02:28,318
+regularization. You're going to have higher weight when your reward estimates are wrong. So
+
+29
+00:02:28,318 --> 00:02:33,280
+you're going to update more when your sort of implied rewards are are not
+
+30
+00:02:33,280 --> 00:02:36,479
+correct. Um and then it you're going to increase the likelihood of the good
+
+31
+00:02:36,479 --> 00:02:39,598
+example and you're going to decrease the likelihood of the bad example. Right? As
+
+32
+00:02:39,598 --> 00:02:44,639
+I was kind of saying, if you sort of remember what I was saying last lecture,
+
+33
+00:02:44,639 --> 00:02:48,719
+um really RL algorithms kind of boil down often to just upweight the good
+
+34
+00:02:48,719 --> 00:02:55,439
+stuff, downweight the bad stuff. And the subtlety really is in deciding, you know, h what the good stuff is and how
+
+35
+00:02:55,439 --> 00:02:58,959
+much to upweight, right? And so this is one particular choice of doing that. And
+
+36
+00:02:58,959 --> 00:03:04,878
+we'll see, you know, other things happen. Uh and so DPO um works pretty
+
+37
+00:03:04,878 --> 00:03:11,439
+well. Um for a while essentially all the open model releases use some variant of
+
+38
+00:03:11,439 --> 00:03:17,039
+a DPO uh to do their post training. Um and really it's just very easy to get
+
+39
+00:03:17,039 --> 00:03:23,120
+working um compared to to uh PO. And so for a while it was um really the
+
+40
+00:03:23,120 --> 00:03:27,120
+dominant approach. Um in the the time since then there was a huge flood of
+
+41
+00:03:27,120 --> 00:03:30,719
+papers that was like you know asterisk PO. Basically everyone wanted to come up
+
+42
+00:03:30,719 --> 00:03:34,560
+with a DPO variant. There was dozens and dozens of papers. Um there's so many
+
+43
+00:03:34,560 --> 00:03:40,080
+that I don't think it's it's worth it to go over the big uh ocean of such papers.
+
+44
+00:03:40,080 --> 00:03:44,318
+Um, I'll mention two, um, not because necessarily that I think they're like the right ones, but because I think
+
+45
+00:03:44,318 --> 00:03:47,919
+they're ones that have been used recently, um, by people that are sort of
+
+46
+00:03:47,919 --> 00:03:52,719
+really pushing the limits of of this kind of DPO style post training. One is
+
+47
+00:03:52,719 --> 00:03:59,360
+SPIO. Um, and SPIO just makes a very simple modification or two simple modifications. Um, the first one is to
+
+48
+00:03:59,360 --> 00:04:04,239
+really normalize the update size by the length of the responses. Um, we'll see
+
+49
+00:04:04,239 --> 00:04:07,360
+kind of this theme appearing later. Um, and the other thing they do is they just
+
+50
+00:04:07,360 --> 00:04:11,120
+get rid of the reference. So now we've lost the DPO sort of mathematical
+
+51
+00:04:11,120 --> 00:04:16,000
+argument that you know what we're doing is looking at ratios of policies but
+
+52
+00:04:16,000 --> 00:04:22,720
+well this is more purely looking at something looks like something where we upweight you know the um the good stuff
+
+53
+00:04:22,720 --> 00:04:29,519
+and downweight the bad stuff under that sort of underlying motivation simpio totally fine um there's other variants
+
+54
+00:04:29,519 --> 00:04:35,680
+uh where you don't do necessarily this like reference policy removal where you just sort of normalize by length um
+
+55
+00:04:35,680 --> 00:04:39,918
+called length normalized dpo um that kind of people have done. Um, and this,
+
+56
+00:04:39,918 --> 00:04:46,399
+you know, these two forms, DPO with length normalization and simpio were the things that were tried, you know, pretty
+
+57
+00:04:46,399 --> 00:04:51,839
+extensively by, uh, AI2 folks when they did Tulu 3. Um, and I think one thing
+
+58
+00:04:51,839 --> 00:04:54,720
+that I'll point out, so I'm going to pause for a moment because I feel like
+
+59
+00:04:54,720 --> 00:05:01,120
+this is an important conceptual, not conceptual, just an important empirical point, which is that in RL a lot of the
+
+60
+00:05:01,120 --> 00:05:05,759
+the findings are very very contingent on the specific setting, right? So depending on the environment in which
+
+61
+00:05:05,759 --> 00:05:09,120
+you run it, depending on the base model that you have, depending on the the
+
+62
+00:05:09,120 --> 00:05:14,959
+post-training preferences that you're running on, you will find pretty different conclusions. Um, and so one
+
+63
+00:05:14,959 --> 00:05:18,800
+example of this, right? So, uh, you know, a bunch of the AI2 folks have been
+
+64
+00:05:18,800 --> 00:05:22,079
+doing a lot of really good post-training empirical work. Um, and they had one
+
+65
+00:05:22,079 --> 00:05:27,120
+work where they were sort of comparing DPO and PO and they had found that PO
+
+66
+00:05:27,120 --> 00:05:30,639
+was better than DPO um, because of maybe it's on policiness and they show this,
+
+67
+00:05:30,639 --> 00:05:35,839
+you know, this jump exactly is the DPO to PO gap. Um, and then in a later work
+
+68
+00:05:35,839 --> 00:05:40,240
+in Tulu 3, they find actually if you do your SFT in a sort of nicer, better way,
+
+69
+00:05:40,240 --> 00:05:44,959
+actually that just eats up all the gains of both PO and DPO. So neither of these
+
+70
+00:05:44,959 --> 00:05:48,399
+really get any gains. And the only thing that does better is maybe DPO with
+
+71
+00:05:48,399 --> 00:05:53,360
+normalization, right? Like pretty different conclusions. Of course, a lot is different between this left and right
+
+72
+00:05:53,360 --> 00:05:56,720
+paper. Um, but it's not that one is wrong and the other is wrong. really
+
+73
+00:05:56,720 --> 00:06:02,399
+that you should be careful about reading too many like generalized conclusions about any of this stuff on the basis um
+
+74
+00:06:02,399 --> 00:06:06,079
+of one paper right so that's an important note even as I go and talk
+
+75
+00:06:06,079 --> 00:06:09,439
+about you know PO and I go and talk about uh GRPO later in this you
+
+76
+00:06:09,439 --> 00:06:17,918
+shouldn't really take any single experimental result necessarily as gospel okay so the last thing I want to
+
+77
+00:06:17,918 --> 00:06:21,120
+end with for RLHF um is sort of two important things um and one of them will
+
+78
+00:06:21,120 --> 00:06:27,600
+really just motivate I think the entirety of today's lecture so I think that's important so the first is
+
+79
+00:06:27,600 --> 00:06:33,680
+overoptimization. Um so in some sense this is just overfitting in fancier naming but it is a a term that I think
+
+80
+00:06:33,680 --> 00:06:40,478
+is very important because what it's saying is essentially as you optimize your policy more and more so think about
+
+81
+00:06:40,478 --> 00:06:44,240
+this x-axis as how much RLI did initially your reward kind of goes up
+
+82
+00:06:44,240 --> 00:06:47,600
+and up and up but eventually you know the reward that reward models that you
+
+83
+00:06:47,600 --> 00:06:52,959
+fitted on human preferences are diverging from you know real human preferences and the more you optimize
+
+84
+00:06:52,959 --> 00:06:56,478
+you eventually kind of diverge out right like you're not doing any better you're
+
+85
+00:06:56,478 --> 00:07:02,879
+just you know optimiz optimizing uh but not actually improving your rewards, right? So this overoptimization thing
+
+86
+00:07:02,879 --> 00:07:09,120
+appears basically everywhere in RHF. It is a very big problem. Um and so that
+
+87
+00:07:09,120 --> 00:07:13,199
+that is kind of a a concern. Um and overoptimization is a phenomenon that
+
+88
+00:07:13,199 --> 00:07:19,360
+really happens in many ways because of the noisiness of human preferences and the complexities of human preferences.
+
+89
+00:07:19,360 --> 00:07:23,680
+So so um some of my students had a study where you know they basically did RLHF
+
+90
+00:07:23,680 --> 00:07:28,079
+on human preferences. They did RLHF on noisy versions of, you know, AI feedback
+
+91
+00:07:28,079 --> 00:07:32,079
+and then they did RLHF on non-noisy versions of human feedback. And you see
+
+92
+00:07:32,079 --> 00:07:40,959
+clear over optimization phenomena both for humans and for noisy AI feedback, but not really for sort of clean
+
+93
+00:07:40,959 --> 00:07:43,598
+noiseless um AI feedback. And so really, you know, if you're going to be
+
+94
+00:07:43,598 --> 00:07:48,639
+post-raining, you should expect to see curves that look like things on the left. as you train your model to do
+
+95
+00:07:48,639 --> 00:07:52,079
+better and better on your sort of proxy rewards that you've measured, you're not
+
+96
+00:07:52,079 --> 00:07:56,959
+necessarily going to get better and better models in terms of uh sort of
+
+97
+00:07:56,959 --> 00:08:02,959
+human preference win rates. Okay? And then the other thing which is an important side note is that when you do
+
+98
+00:08:02,959 --> 00:08:07,439
+RL, right, remember that I said that we're no longer in probabilistic world, right? So when you're doing supervised
+
+99
+00:08:07,439 --> 00:08:11,918
+fine-tuning or when you're doing pre-training, it's quite clear that what you're doing is you're trying to do
+
+100
+00:08:11,918 --> 00:08:19,120
+probabilistic modeling on some distribution, right? you're doing distribution matching for something, right? Um, but RLHF is all it's all just
+
+101
+00:08:19,120 --> 00:08:26,160
+a policy. There's no underlying necessarily distribution. And how this manifests is that often you'll get much
+
+102
+00:08:26,160 --> 00:08:33,679
+less calibrated models, right? A number of results across many different papers have shown that, you know, RLHF models
+
+103
+00:08:33,679 --> 00:08:38,639
+um often, especially at temperature one, you know, show much more overconfident behavior. So, this one was from one of
+
+104
+00:08:38,639 --> 00:08:42,719
+the anthropic papers. This one was from, I think, the GPT4 release. Um this one
+
+105
+00:08:42,719 --> 00:08:47,039
+was from a a paper that one of my posttos did. In all these cases
+
+106
+00:08:47,039 --> 00:08:52,240
+essentially the RLHF models are much less calibrated and maybe that's fine right because calibration isn't part of
+
+107
+00:08:52,240 --> 00:08:55,839
+the reward that you're putting in. So so that's you know as designed but you
+
+108
+00:08:55,839 --> 00:09:01,278
+should be very careful thinking of these models as sort of calibrated probabilistic models which you might be
+
+109
+00:09:01,278 --> 00:09:07,278
+sort of tempted to do if you're kind of coming into this from a generative
+
+110
+00:09:07,278 --> 00:09:11,440
+modeling um background. So, okay. Um, so up until now, we've been kind of
+
+111
+00:09:11,440 --> 00:09:15,278
+thinking about um, RLHF and all these things. Actually, I'll stop for a moment. If anyone has any final
+
+112
+00:09:15,278 --> 00:09:18,639
+questions for RLHF, I'll answer them before I go on because we're going to
+
+113
+00:09:18,639 --> 00:09:26,320
+totally switch topics to uh, RL from verified rewards in a moment. Yes. Uh, going back to the human
+
+114
+00:09:26,320 --> 00:09:33,360
+preferences graph, what's what are the two axes that that we're looking at? This one? Yeah. Yeah. So, the x-axis is
+
+115
+00:09:33,360 --> 00:09:36,000
+proxy reward. So, um, here we're fitting like a reward model. We're not we're not
+
+116
+00:09:36,000 --> 00:09:41,759
+doing VPO here, right? So let's say we're doing something like PO where we
+
+117
+00:09:41,759 --> 00:09:46,000
+fit a a reward uh classifier and the X-axis is saying how well did my RL
+
+118
+00:09:46,000 --> 00:09:52,958
+algorithm optimize that reward classifier. Right? So this is success at RL on is on the X- axis. Y-axis is this
+
+119
+00:09:52,958 --> 00:09:57,600
+is kind of like true win rates either measured by you know AI feedback here or
+
+120
+00:09:57,600 --> 00:10:01,919
+human feedback. So this is like real human votes you know on the y- axis
+
+121
+00:10:01,919 --> 00:10:06,559
+here. Um, and so this is saying you might think that succeeding at RL will
+
+122
+00:10:06,559 --> 00:10:10,240
+make you succeed at the actual task that you know you're trying to optimize for.
+
+123
+00:10:10,240 --> 00:10:16,600
+That's not the case. It will overfit at some point for at least human
+
+124
+00:10:16,600 --> 00:10:27,600
+preferences. Um, yes. So question why is it written in that not like beta
+
+125
+00:10:27,600 --> 00:10:31,679
+log a minus log b or just like log of a b like are you just asking like why
+
+126
+00:10:31,679 --> 00:10:35,519
+don't they like pull the fractions out in the log or because I thought is this
+
+127
+00:10:35,519 --> 00:10:38,958
+like a numeric computation thing that like when you take these two ratios the
+
+128
+00:10:38,958 --> 00:10:42,240
+taking the log is easier to compute and that's why we want to do no I don't
+
+129
+00:10:42,240 --> 00:10:47,039
+think that I think taking ratios is actually add numerically. So I think this is really just like a save the
+
+130
+00:10:47,039 --> 00:10:52,480
+space you know the ratios you know are more compact and they're also intuitive objects right so the moment
+
+131
+00:10:52,480 --> 00:10:56,320
+you put simple it becomes a different form because you no longer have the same
+
+132
+00:10:56,320 --> 00:11:00,720
+beta concept yes that's right yeah simpio is just like a very different motivation for why you would do this
+
+133
+00:11:00,720 --> 00:11:09,360
+thing right there's no ratios it's a very fundamentally different object yes in the graph where you showed like a
+
+134
+00:11:09,360 --> 00:11:14,159
+more sort of hacking thing um I was wondering like how you like how the
+
+135
+00:11:14,159 --> 00:11:18,399
+measure like you know the ground truth of like the reward score, right? Cuz
+
+136
+00:11:18,399 --> 00:11:25,360
+presumably the reward function is a model like the human preference, right? But it's kind of like a train test gap,
+
+137
+00:11:25,360 --> 00:11:29,120
+right? The x-axis here, you know, you have a train set, you fit a reward model
+
+138
+00:11:29,120 --> 00:11:33,360
+on it and you're measuring that fitted reward model, right? And the y-axis is
+
+139
+00:11:33,360 --> 00:11:38,240
+fresh samples from the true reward oracle, right? Um and so they're measuring in expectation the same thing,
+
+140
+00:11:38,240 --> 00:11:43,039
+but they're not measuring in finite sample the same thing. like the same this is the same as like train test gaps
+
+141
+00:11:43,039 --> 00:11:48,159
+in machine learning right same conceptual object they are in expectation measuring the same thing um
+
+142
+00:11:48,159 --> 00:11:53,919
+for any finite sample that's not the case okay good um so I think you know
+
+143
+00:11:53,919 --> 00:11:58,879
+all this questions about um reinforcement learning from human feedback I think brings up a good point
+
+144
+00:11:58,879 --> 00:12:03,039
+which is that you know human feedback is very difficult to optimize it's very
+
+145
+00:12:03,039 --> 00:12:07,120
+difficult to scale and so you might wonder are there other kinds of more
+
+146
+00:12:07,120 --> 00:12:11,519
+effective RL that we can bring to bear on post training right And that's going
+
+147
+00:12:11,519 --> 00:12:16,240
+to get us here, right? So, up until now, we've been kind of talking about chat
+
+148
+00:12:16,240 --> 00:12:20,879
+GBD 3.5 and that era of models. And now I think we want to talk about 01 and the
+
+149
+00:12:20,879 --> 00:12:24,958
+the you know the new set of kind of reasoning style models, right? And the
+
+150
+00:12:24,958 --> 00:12:29,039
+way we're going to get there is kind of this thinking of saying, okay, we have
+
+151
+00:12:29,039 --> 00:12:34,799
+this very powerful tool now. We have this reinforcement learning tool that we can use for post- training. Um, and
+
+152
+00:12:34,799 --> 00:12:38,399
+initially, you know, the the instinct was to say, you know, there's one true
+
+153
+00:12:38,399 --> 00:12:42,399
+objective, and that objective is whether people like the bot, right? And so, if
+
+154
+00:12:42,399 --> 00:12:47,120
+we just optimize for the true objective we care about, that's all we need. Turns
+
+155
+00:12:47,120 --> 00:12:51,200
+out to be very difficult, right? Human uh human uh approval is easy to hack.
+
+156
+00:12:51,200 --> 00:12:55,120
+It's hard to collect at scale. It's hard to RL at scale. For all those reasons,
+
+157
+00:12:55,120 --> 00:12:59,600
+you see, you know, overoptimization and all these kind of issues. On the other
+
+158
+00:12:59,600 --> 00:13:03,839
+hand, we could instead turn to to where RL has really dominated, right? things
+
+159
+00:13:03,839 --> 00:13:07,600
+like alpha go or alpha fold. And then you know looking at those domains you
+
+160
+00:13:07,600 --> 00:13:11,839
+might say you know what we really need is kind of a domain which we know the
+
+161
+00:13:11,839 --> 00:13:17,600
+true reward and for which we can evaluate such true rewards very quickly and efficiently and at scale right and
+
+162
+00:13:17,600 --> 00:13:21,278
+if we could do that then we can bring to bear all of the successes of
+
+163
+00:13:21,278 --> 00:13:26,879
+reinforcement learning from the past into language modeling. Right? So that's the overall mindset that we're we're
+
+164
+00:13:26,879 --> 00:13:32,399
+we're adopting now. Right? We have the tools that we've built. Now let's apply
+
+165
+00:13:32,399 --> 00:13:37,120
+them into a very kind of different way of using the same tools, right? Taking
+
+166
+00:13:37,120 --> 00:13:42,320
+inspiration from successes in in RL. Okay. Um and so today I'm going to talk
+
+167
+00:13:42,320 --> 00:13:46,399
+in two parts, right? So the first part is just going to be an algorithmic part,
+
+168
+00:13:46,399 --> 00:13:49,600
+right? So this part on the very top I'm going to talk about different um
+
+169
+00:13:49,600 --> 00:13:53,360
+algorithms. First I'm going to talk about PO in more detail because you know
+
+170
+00:13:53,360 --> 00:13:58,320
+I kind of cut that from last lecture for length reasons. And then I'm going to
+
+171
+00:13:58,320 --> 00:14:02,000
+transform PO into GRPO. um a simpler version in some sense and then we'll
+
+172
+00:14:02,000 --> 00:14:08,159
+talk through those objectives and various uh implementation details of
+
+173
+00:14:08,159 --> 00:14:13,679
+GRPO um to get us to multiple like canonical variations of GRPO and having
+
+174
+00:14:13,679 --> 00:14:18,399
+done that we will then walk through the three I think uh big reasoning model
+
+175
+00:14:18,399 --> 00:14:22,559
+sort of training things that have been done as case studies um since after part
+
+176
+00:14:22,559 --> 00:14:25,440
+one you'll have all the tools that you need to understand everything that is
+
+177
+00:14:25,440 --> 00:14:28,799
+happening in part two right and after you do part two you'll understand at
+
+178
+00:14:28,799 --> 00:14:35,919
+least how these three uh Chinese open LMS were made. Okay, so now we are going to return to
+
+179
+00:14:35,919 --> 00:14:39,759
+PO. Um it is the thing that I didn't want to do but we have to do in order
+
+180
+00:14:39,759 --> 00:14:45,759
+for you to understand why GRPO exists, right? Um so what is PO? Um at least in
+
+181
+00:14:45,759 --> 00:14:49,120
+my sort of mental model of what PO is, we start from the simplest possible
+
+182
+00:14:49,120 --> 00:14:53,679
+thing and then we move you know slowly but surely downwards to PO, right? So
+
+183
+00:14:53,679 --> 00:14:59,198
+the simplest possible thing um I mentioned this in last lecture. This is the policy gradient, right? So on the
+
+184
+00:14:59,198 --> 00:15:03,278
+left, I would like to optimize the expected reward under my policy P of
+
+185
+00:15:03,278 --> 00:15:07,600
+theta, right? Um, and we're going to optimize that through gradient descent. So I take the gradient of that object
+
+186
+00:15:07,600 --> 00:15:11,440
+and I get the right hand side of that equation, which is the policy gradient,
+
+187
+00:15:11,440 --> 00:15:15,198
+the expectation uh under my current policy of the reward and I'm going to
+
+188
+00:15:15,198 --> 00:15:21,679
+take gradient steps that sort of either increase or decrease the probability according to the sign of the reward Z.
+
+189
+00:15:21,679 --> 00:15:25,120
+Right? Um, hopefully straightforward. Um if this is not familiar to you, you can
+
+190
+00:15:25,120 --> 00:15:32,078
+sort of brush up on how that policy gradient derivation happens. Now um there are two things that we might want
+
+191
+00:15:32,078 --> 00:15:35,919
+to to think about uh here that are kind of inefficient, right? So the first
+
+192
+00:15:35,919 --> 00:15:40,399
+thing is that this is uh what you might call purely on policy, right? So the way
+
+193
+00:15:40,399 --> 00:15:44,720
+that the reinforced gradients work, I have to sample from P theta and then I
+
+194
+00:15:44,720 --> 00:15:48,639
+will immediately take a step uh on those sampled examples, right? And so every
+
+195
+00:15:48,639 --> 00:15:53,278
+time that I want to take a gradient step, I have to compute a reward, right?
+
+196
+00:15:53,278 --> 00:15:57,278
+and I have to do a roll out. You will sort of understand this in your in your
+
+197
+00:15:57,278 --> 00:16:00,879
+assignment five, but the expensive part of RL is the rollouts, right? We have to
+
+198
+00:16:00,879 --> 00:16:03,679
+actually run the language model and get samples. And we know that that's slow,
+
+199
+00:16:03,679 --> 00:16:09,919
+right? From Percy's inference lecture, we know that that's very complicated. It's very tricky. Um, we would much
+
+200
+00:16:09,919 --> 00:16:13,839
+rather sample less frequently, right? We we do a roll out once, we sample once,
+
+201
+00:16:13,839 --> 00:16:22,078
+and then we take multiple updates on those rollouts. So that motivates something called TRPO, right? where
+
+202
+00:16:22,078 --> 00:16:25,919
+instead of taking updates from P theta, I would like to allow my sort of updates
+
+203
+00:16:25,919 --> 00:16:31,519
+to go stale. So what I'm going to do is I'm going to sample from um P theta old,
+
+204
+00:16:31,519 --> 00:16:35,440
+this sort of base distribution down here um but still get sort of valid policy
+
+205
+00:16:35,440 --> 00:16:38,799
+gradients. Well, how can I do that? Well, I can do what's called an
+
+206
+00:16:38,799 --> 00:16:45,198
+important sampling correction and then I can keep, you know, um, my policies close to my old one so that I don't get
+
+207
+00:16:45,198 --> 00:16:49,839
+too far uh, from my old one and get sort of crazy reward estimates. Right? Very
+
+208
+00:16:49,839 --> 00:16:54,078
+simple idea. Just do a little bit of off to on policy correction. You get
+
+209
+00:16:54,078 --> 00:16:57,519
+something called TRPO. This a of T is a lower variance version of R of Z. I'm
+
+210
+00:16:57,519 --> 00:17:04,160
+not going to talk about advantage estimation uh, in much more detail. PO is a is a simple extra step beyond this.
+
+211
+00:17:04,160 --> 00:17:08,240
+It says, you know, instead of doing KL divergences, I'm just going to clip the
+
+212
+00:17:08,240 --> 00:17:13,599
+advantages. And this is naturally going to force my policy to remain close because if I go too far, then I'm not
+
+213
+00:17:13,599 --> 00:17:17,519
+going to be able to get higher and higher rewards. These rewards will just
+
+214
+00:17:17,519 --> 00:17:20,558
+get clipped off at sort of a one minus epsilon or one plus epsilon. There's an
+
+215
+00:17:20,558 --> 00:17:24,400
+upper bound to how much reward I can collect. So there's no incentive for the
+
+216
+00:17:24,400 --> 00:17:31,839
+RL algorithm to make the policy really different from the current one, right? So it's a soft version you can say think
+
+217
+00:17:31,839 --> 00:17:37,200
+of kind of this idea. Okay, so PO very successful RL algorithm um used in many
+
+218
+00:17:37,200 --> 00:17:43,119
+different places um you know used in sort of very toy RL environments uh it
+
+219
+00:17:43,119 --> 00:17:46,960
+was used in OpenAI sort of Dotaabot um works very well in such actual RL tasks
+
+220
+00:17:46,960 --> 00:17:51,839
+oh yeah there was a video I forgot about that yeah look you can run around yeah
+
+221
+00:17:51,839 --> 00:17:56,640
+okay um and at a conceptual level it's not that complicated right um if you go
+
+222
+00:17:56,640 --> 00:18:00,960
+look at the openai documentation uh for PO it looks fairly simple right you see
+
+223
+00:18:00,960 --> 00:18:04,880
+that equation that I listed above, it's this po clip objective. And really the
+
+224
+00:18:04,880 --> 00:18:10,960
+only thing that's maybe slightly complicated is that this a of t is actually calculated by using something
+
+225
+00:18:10,960 --> 00:18:16,798
+called a value function. So you need a second neural network to essentially compute kind of the expected rewards. Um
+
+226
+00:18:16,798 --> 00:18:20,880
+and that would be used to to in some sense lower the variance of my
+
+227
+00:18:20,880 --> 00:18:24,880
+gradients, right? Um I'm not going to go into the details once again of of sort
+
+228
+00:18:24,880 --> 00:18:28,240
+of all the RL details but you know the one implementation uh difference here
+
+229
+00:18:28,240 --> 00:18:31,919
+that matters is that we need this value function and that will become important
+
+230
+00:18:31,919 --> 00:18:38,000
+in a moment here. Um but PO in practice is a very very
+
+231
+00:18:38,000 --> 00:18:42,000
+different beast from PO in theory. Um and you know you're in for a very bad
+
+232
+00:18:42,000 --> 00:18:46,960
+time if you know there's a blog post that says 37 implementation details of
+
+233
+00:18:46,960 --> 00:18:54,000
+PO. Um you know I don't want to know all 37 of those guys. Um, and you know, it's
+
+234
+00:18:54,000 --> 00:18:57,599
+a there's a huge long list of sort of different PO variants in this blog post
+
+235
+00:18:57,599 --> 00:19:02,079
+and all of them have the different scores on the RL uh benchmarks and
+
+236
+00:19:02,079 --> 00:19:07,599
+there's a whole paper written on why implementation details matter in PO and how if you really mess it up, you're not
+
+237
+00:19:07,599 --> 00:19:13,919
+even computing the policy gradient correctly anymore, but it actually works better, right? Um, so it's kind of a a
+
+238
+00:19:13,919 --> 00:19:18,000
+crazy place. Um, if you look at the implementation details of PO and so we
+
+239
+00:19:18,000 --> 00:19:21,599
+actually do have to maybe look at a live implementation detail. Um, I'll actually
+
+240
+00:19:21,599 --> 00:19:26,240
+go over it quickly because PO isn't the point of this lecture. But what I want
+
+241
+00:19:26,240 --> 00:19:29,519
+to get across to you is, you know, you all haven't been necessarily working on
+
+242
+00:19:29,519 --> 00:19:35,519
+this post- training space. Like why do people care so much about alternatives to PO? It is because of things like
+
+243
+00:19:35,519 --> 00:19:40,160
+this, right? PO works well, but it is kind of a beast. Um, and this is one
+
+244
+00:19:40,160 --> 00:19:46,400
+example I think from the early days of RLHF uh re-implementations. Um, there was this nice diagram
+
+245
+00:19:46,400 --> 00:19:52,480
+describing, you know, this is how you would do a pretty standard implementation of PO. This diagram is
+
+246
+00:19:52,480 --> 00:19:56,240
+pretty gnarly, right? We've got a reward model for RLHF. We've got a value model
+
+247
+00:19:56,240 --> 00:20:00,558
+that's supposed to keep track of kind of the expected reward. Um, we've got
+
+248
+00:20:00,558 --> 00:20:06,000
+generalized advantage estimation. I haven't even explained what that is. Um, and that's going to go into the policy
+
+249
+00:20:06,000 --> 00:20:10,480
+um, language model. and we're going to do, you know, our policy gradient updates. So there's there's all this
+
+250
+00:20:10,480 --> 00:20:17,279
+sort of machinery that has to go into place for PO to work. Um so we're going
+
+251
+00:20:17,279 --> 00:20:21,200
+to look at an implementation. Um a few years back now actually um some of my
+
+252
+00:20:21,200 --> 00:20:26,240
+students and I did you know reimplementations of algorithms like PO um and other people have used it. So
+
+253
+00:20:26,240 --> 00:20:29,519
+this is an implementation that's been somewhat tested. Not to say that this is
+
+254
+00:20:29,519 --> 00:20:35,839
+a good implementation. I'm sure you know something like uh more modern implementations from Volcano Engine and
+
+255
+00:20:35,839 --> 00:20:40,798
+other things uh probably work a little bit better but I just want to walk you
+
+256
+00:20:40,798 --> 00:20:45,519
+through all the different components. Um also because as you write um GRPO in
+
+257
+00:20:45,519 --> 00:20:52,480
+your assignments your structure will probably mirror some aspects of this right all RL algorithms have similar
+
+258
+00:20:52,480 --> 00:20:57,839
+kind of outer loop. So um if we look at this right so a a PO step looks very
+
+259
+00:20:57,839 --> 00:21:01,599
+similar to a standard uh gradient update step uh in a language model. So this is
+
+260
+00:21:01,599 --> 00:21:05,359
+the outer sort of loop. What we're going to do is we're going to you know get a
+
+261
+00:21:05,359 --> 00:21:07,919
+bunch of rollouts. Um and once we get you know a bunch of rollouts what we're
+
+262
+00:21:07,919 --> 00:21:11,519
+going to do is we're going to compute some losses and then we're going to just
+
+263
+00:21:11,519 --> 00:21:15,279
+take backwards and then gradient steps with you know clip norm and that's it
+
+264
+00:21:15,279 --> 00:21:21,440
+right very unintimidating. the outer loop of of RL is is usually fine, right?
+
+265
+00:21:21,440 --> 00:21:25,919
+Um, you know, loss computation is also basically the same thing. So, um, this
+
+266
+00:21:25,919 --> 00:21:29,359
+is probably uh small for those of you in the back. Um, but if you look at this,
+
+267
+00:21:29,359 --> 00:21:33,119
+you know, what you have is one block that's computing the loss for the value
+
+268
+00:21:33,119 --> 00:21:36,640
+function. Remember, PO has both a value function and a policy. So, we have to
+
+269
+00:21:36,640 --> 00:21:40,558
+update both of those at once. So, we're computing how close is the value
+
+270
+00:21:40,558 --> 00:21:44,319
+function to kind of the actual sort of returns, the rewards that we saw. Um,
+
+271
+00:21:44,319 --> 00:21:47,919
+and we want to keep those close because the value function is supposed to
+
+272
+00:21:47,919 --> 00:21:54,079
+provide variance reduction. And then we've got the actual sort of rewards that we're going to update on for uh PO.
+
+273
+00:21:54,079 --> 00:21:57,839
+And then we have sort of the clipping constants 1 - epsilon 1 plus epsilon.
+
+274
+00:21:57,839 --> 00:22:02,079
+This code is literally just copying this back over. And just to give you sort of
+
+275
+00:22:02,079 --> 00:22:07,599
+some, you know, intuition for hyperparameters, you know, a typical clip range might be something like 02
+
+276
+00:22:07,599 --> 00:22:13,279
+here, right? So, so you would be allowed to go essentially from 0.8 to 1.2 two in
+
+277
+00:22:13,279 --> 00:22:19,679
+likelihood ratio between your old and new policy. Um the rollouts is where
+
+278
+00:22:19,679 --> 00:22:24,558
+things start to get gnarly, but this is still essentially just calling inference. The left side is really just
+
+279
+00:22:24,558 --> 00:22:30,159
+sampling, you know, rollouts from your current policy and then you evaluate the log problems of your samples and you
+
+280
+00:22:30,159 --> 00:22:35,200
+move on to the right and what do you see? Well, uh the only subtlety here is
+
+281
+00:22:35,200 --> 00:22:38,159
+that your value and your reward and your policy may have different tokenizers. So
+
+282
+00:22:38,159 --> 00:22:43,519
+you got to do retokenization. But otherwise you just feed your rollouts into the model. So okay, at this point
+
+283
+00:22:43,519 --> 00:22:48,400
+you're like looking at this code and you say okay that's fine like this is not
+
+284
+00:22:48,400 --> 00:22:52,798
+not so horrible. Um but the places where things start to get a little bit tricky.
+
+285
+00:22:52,798 --> 00:22:58,079
+Um is first we have to do some reward shaping right? So what does this mean?
+
+286
+00:22:58,079 --> 00:23:04,319
+Um so stepping slightly back. One thing that's weird about reinforcement learning for language models is if you
+
+287
+00:23:04,319 --> 00:23:09,279
+you know think about it from the RL perspective technically it's kind of like a contextual bandit. Well, what
+
+288
+00:23:09,279 --> 00:23:14,240
+what is a contextual bandit? A contextual bandit is something where you get an input and you have a bunch of
+
+289
+00:23:14,240 --> 00:23:17,839
+possible, you know, uh actions to take and you immediately get a reward, right?
+
+290
+00:23:17,839 --> 00:23:20,400
+In language modeling, you get a prompt, you can give an output, and you
+
+291
+00:23:20,400 --> 00:23:25,679
+immediately get a reward. There's no like state transitions. There's no environment exploration. There's none of
+
+292
+00:23:25,679 --> 00:23:32,400
+this like complexity, right? Um reward shaping here is essentially constructing
+
+293
+00:23:32,400 --> 00:23:36,720
+um uh per token losses in order to be able to give you something more uh easy
+
+294
+00:23:36,720 --> 00:23:41,359
+to learn for the RL algorithm. And so what happens in practice for PO and for
+
+295
+00:23:41,359 --> 00:23:47,839
+GRPO which you'll be implementing um is that the KL terms essentially the regularization that we're applying is
+
+296
+00:23:47,839 --> 00:23:51,440
+actually computed per token whereas the um actual true reward like the did you
+
+297
+00:23:51,440 --> 00:23:55,200
+complete the task or not kind of thing that's computed at the very last token.
+
+298
+00:23:55,200 --> 00:24:01,359
+Right? So you see that there's essentially a per token reward for the regularization and there's a single
+
+299
+00:24:01,359 --> 00:24:06,079
+terminal reward at the end for um success or not. Yes. What does it mean?
+
+300
+00:24:06,079 --> 00:24:12,960
+What does not work? Um, oh, right, right, right. This is um this is a Right, right. This is uh kind
+
+301
+00:24:12,960 --> 00:24:19,919
+of funny. This basically we're only adding per token KL penalty, but once again, this is one of those funny um uh
+
+302
+00:24:19,919 --> 00:24:24,640
+PL implementation things. Um this second line here, this is the actual true KL
+
+303
+00:24:24,640 --> 00:24:29,759
+calculation. Um but when this number goes to negative, um it becomes numerically unstable and you can
+
+304
+00:24:29,759 --> 00:24:34,079
+actually hit that pretty often. And so this gets clamped off at zero, which you
+
+305
+00:24:34,079 --> 00:24:38,240
+know all of you know if you clip off a a log likelihood uh ratio at zero that's
+
+306
+00:24:38,240 --> 00:24:44,720
+not a KL anymore, but it is some approximation to a KL. Yes. What are um
+
+307
+00:24:44,720 --> 00:24:51,038
+so we've talked about like boss function. What are our update steps
+
+308
+00:24:51,038 --> 00:24:55,839
+especially like as it relates to the um the reward function? Is that the same as
+
+309
+00:24:55,839 --> 00:25:00,000
+other Yeah. Yeah. Good good point. So the the updates you know as I was saying
+
+310
+00:25:00,000 --> 00:25:04,000
+in this outer loop is actually just taking gradient steps. So in terms of
+
+311
+00:25:04,000 --> 00:25:08,079
+your code it will look no different than just taking you know normal gradient
+
+312
+00:25:08,079 --> 00:25:13,519
+steps. Um what is happening here though is in some sense uh let's go back to the
+
+313
+00:25:13,519 --> 00:25:18,558
+policy gradient equation here. Um right if you write down this thing this is r
+
+314
+00:25:18,558 --> 00:25:23,599
+of z * p theta z. This is kind of like just taking gradients with respect to
+
+315
+00:25:23,599 --> 00:25:27,119
+theta of rzp log p theta z. It's a weighted loss that you then take
+
+316
+00:25:27,119 --> 00:25:30,000
+gradients of. Um, and what you're not doing is technically if you're taking a
+
+317
+00:25:30,000 --> 00:25:33,119
+real gradient, you should also take a gradient into P theta, but you don't do
+
+318
+00:25:33,119 --> 00:25:37,359
+that. There's kind of a stop implicit stop gradient. And so all you do is you
+
+319
+00:25:37,359 --> 00:25:41,839
+compute this inner loss, you feed it to the autograd, and you'll get the right
+
+320
+00:25:41,839 --> 00:25:47,599
+steps for the rein uh for the policy gradient. Um, yeah, you'll have to do that for for
+
+321
+00:25:47,599 --> 00:25:51,119
+the assignment as well. And we have like a little tutorial that explains kind of
+
+322
+00:25:51,119 --> 00:25:54,720
+what's going on there in case that that quick explanation was not clear. Okay.
+
+323
+00:25:54,720 --> 00:25:59,038
+And finally, the part that I think is the gnarliest is there's a the box that
+
+324
+00:25:59,038 --> 00:26:05,519
+I did not explain called generalized advantage estimation, right? Um so what you need to do whenever you have a
+
+325
+00:26:05,519 --> 00:26:10,000
+policy gradient, um the variances of the gradient are often very high, right? And
+
+326
+00:26:10,000 --> 00:26:14,400
+so you want to do as much variance reduction as you can. And instead of
+
+327
+00:26:14,400 --> 00:26:20,720
+multiplying the gradients with uh the rewards directly, you can instead you can show that the following um a of t
+
+328
+00:26:20,720 --> 00:26:27,440
+quantity which is essentially a discounted um advantage estimate. That's a sort of RL term um is an appropriate
+
+329
+00:26:27,440 --> 00:26:31,519
+substitute. And so one of the things that PO does that's very different is to
+
+330
+00:26:31,519 --> 00:26:37,119
+use this advantage estimate where you can tweak lambda um and gamma to trade
+
+331
+00:26:37,119 --> 00:26:42,720
+off bias and variance uh of your gradients. One of the funny things though is despite kind of the annoyance
+
+332
+00:26:42,720 --> 00:26:48,000
+of this this implementation complexity of like maintaining this value function and estimating all these quantities um
+
+333
+00:26:48,000 --> 00:26:51,839
+you can just pick gamma equals lambda equals 1 which reduces this whole thing
+
+334
+00:26:51,839 --> 00:26:59,679
+basically to a baselined policy gradient. So your guts taking R uh minus the the implied value. Um and that works
+
+335
+00:26:59,679 --> 00:27:04,240
+well too. And so the point of making you go through this was um a lot of the
+
+336
+00:27:04,240 --> 00:27:08,960
+implementations details for PO are both simple in that it is just the outer loop
+
+337
+00:27:08,960 --> 00:27:11,919
+RL. You do just take gradients and also kind of annoying, right? You have to do
+
+338
+00:27:11,919 --> 00:27:14,558
+all these sort of clipping things. You have to think about what am I going to
+
+339
+00:27:14,558 --> 00:27:19,119
+do with the generalized advantage estimate. Um what am I going to do to
+
+340
+00:27:19,119 --> 00:27:23,038
+train the value um estimate? Um but you expect to see, you know, overall
+
+341
+00:27:23,038 --> 00:27:30,159
+increasing rewards. um including reward models and sort of negative KL rewards kind of go down. This is a once again um
+
+342
+00:27:30,159 --> 00:27:38,079
+a contextual bandit. So you expect to see pretty reasonable training curves, not like crazy RL ones. Okay, so I went
+
+343
+00:27:38,079 --> 00:27:42,640
+through PO. Um that was kind of a whirlwind tour, but I think hopefully
+
+344
+00:27:42,640 --> 00:27:47,679
+you get the context of a what PO is and b that it is sometimes a little bit
+
+345
+00:27:47,679 --> 00:27:52,640
+tricky to get working right. And so, you know, this has motivated a lot of people
+
+346
+00:27:52,640 --> 00:27:56,319
+to try to find alternatives to PO. Um, what we're going to want to do is to
+
+347
+00:27:56,319 --> 00:28:03,119
+apply, you know, essentially these RL algorithms to settings where PO applies. And PO applies very well to to general
+
+348
+00:28:03,119 --> 00:28:07,599
+RL settings where you have sort of rewards. Um, but we don't want the
+
+349
+00:28:07,599 --> 00:28:12,640
+complicated implementation. And maybe more importantly, we want to get rid of the value model. That is actually if you
+
+350
+00:28:12,640 --> 00:28:19,119
+try to implement PO really, really annoying, right? because a value model is usually as big as your policy. So now
+
+351
+00:28:19,119 --> 00:28:23,759
+in terms of GPU memory, you're paying twice the cost of your language model.
+
+352
+00:28:23,759 --> 00:28:28,079
+Right? Now you might say, okay, uh why can't we use DPO? Well, DPO is well
+
+353
+00:28:28,079 --> 00:28:34,240
+suited for like pair-wise comparisons like Bradley Terry comparisons. Um it's not so good if what you want to do is
+
+354
+00:28:34,240 --> 00:28:38,798
+let's say do reinforcement learning on math questions and check whether or not the answers are correct, right? There's
+
+355
+00:28:38,798 --> 00:28:46,079
+no pair-wise structure so to speak inherently there. So maybe DPO is not great, right? Um, DPO also, you know,
+
+356
+00:28:46,079 --> 00:28:49,519
+originally is is kind of an offline algorithm in a sense in that it has a
+
+357
+00:28:49,519 --> 00:28:52,720
+whole bunch of sort of pairs that you initially collect and you just update
+
+358
+00:28:52,720 --> 00:28:56,480
+your model on those. You could make it online by iterating, but that's not
+
+359
+00:28:56,480 --> 00:29:03,119
+usually the way in which uh people apply GPO. So then now this brings us to the new
+
+360
+00:29:03,119 --> 00:29:09,119
+hotness which I think is uh GRPO, right? So GRPO is actually very very simple um
+
+361
+00:29:09,119 --> 00:29:17,200
+both in motivation and in actual implementation. So where you start with is conceptually you start at PO, right?
+
+362
+00:29:17,200 --> 00:29:20,720
+You start with very similar pieces. Um you think about kind of this clipping
+
+363
+00:29:20,720 --> 00:29:27,038
+thing. You think about policy updates in very similar ways. Um but what you do is
+
+364
+00:29:27,038 --> 00:29:31,919
+you remove the really complicated generalized advantage estimation. You just get rid of it completely. Um and
+
+365
+00:29:31,919 --> 00:29:36,960
+you replace it with something that is much much simpler. Right? Uh so what is
+
+366
+00:29:36,960 --> 00:29:41,519
+the much simpler thing? Well, we are going to replace um the advantage which
+
+367
+00:29:41,519 --> 00:29:45,200
+used to be this like GA thing. It was the sum o over returns and had the value
+
+368
+00:29:45,200 --> 00:29:50,319
+function in there. Instead, it's going to be this equation three at the bottom
+
+369
+00:29:50,319 --> 00:29:55,278
+of this slide here. Um and what is this? Uh the advantage of you know response I
+
+370
+00:29:55,278 --> 00:30:00,159
+is equal to the reward that response I receives minus the mean of the responses
+
+371
+00:30:00,159 --> 00:30:05,278
+within my group. And I'll define what a group is in a moment. and then divided
+
+372
+00:30:05,278 --> 00:30:09,278
+by the standard deviation of the rewards within the group. So this is a zcore uh
+
+373
+00:30:09,278 --> 00:30:14,159
+if you know what that is um of the rewards within the group. Right? Now
+
+374
+00:30:14,159 --> 00:30:18,798
+what is a group? A group is a very in some sense natural object for for
+
+375
+00:30:18,798 --> 00:30:22,720
+language model RL. You have an input question. Let's say like solve this math
+
+376
+00:30:22,720 --> 00:30:28,798
+problem. Right? That is a group. And I have many different candidate responses. I have capital G uh different responses.
+
+377
+00:30:28,798 --> 00:30:33,359
+Um and those are all the responses within my single group. Right? So um the
+
+378
+00:30:33,359 --> 00:30:37,519
+nice thing is if you think about it right maybe problems are harder or
+
+379
+00:30:37,519 --> 00:30:42,398
+easier right you know some math problems are much harder than others um and
+
+380
+00:30:42,398 --> 00:30:46,720
+because of that the average reward that my sort of other samples receive is a
+
+381
+00:30:46,720 --> 00:30:52,398
+natural baseline for myself and and people have explored exactly these kinds of algorithms um if you look up like uh
+
+382
+00:30:52,398 --> 00:30:58,319
+reinforcement learning with leave one out or sorry policy gradients with leave one out this is the leave one out
+
+383
+00:30:58,319 --> 00:31:04,720
+baseline um in action minus the standard deviation piece um right
+
+384
+00:31:04,720 --> 00:31:08,640
+Um the yes I was wondering talking about here like so you said it's
+
+385
+00:31:08,640 --> 00:31:12,480
+a it's like they have a batch of questions right and then there are
+
+386
+00:31:12,480 --> 00:31:16,798
+answers to it which are reported so like is each like answer only corresponding
+
+387
+00:31:16,798 --> 00:31:20,880
+to one unique question or are we doing like multiple like kind of um like
+
+388
+00:31:20,880 --> 00:31:28,079
+trajectories of the same question for multiple questions right you do multiple answers per question and that's how you
+
+389
+00:31:28,079 --> 00:31:33,919
+get kind of variance reduction in like multiple different questions and also like kind of like multiple answers
+
+390
+00:31:33,919 --> 00:31:38,079
+for each of the questions. Is that a really important example? No. No. So for
+
+391
+00:31:38,079 --> 00:31:41,919
+each question Q, GRPO samples a group of outputs, right? So so I mean this is not
+
+392
+00:31:41,919 --> 00:31:45,119
+batched like you you normally you would if you were doing this for real, you
+
+393
+00:31:45,119 --> 00:31:50,798
+would have multiple questions and for each question you'd have G responses and those would get baseline together.
+
+394
+00:31:50,798 --> 00:31:55,839
+Across questions you would have no baselining or any interaction really other than the policies get updated
+
+395
+00:31:55,839 --> 00:31:59,839
+together. Okay. So the the baseline is only doing within the same question. And
+
+396
+00:31:59,839 --> 00:32:05,519
+that that's why the baseline makes sense, right? Because a question is like hard or easy and the mean of that that
+
+397
+00:32:05,519 --> 00:32:13,278
+reward isn't sometimes capturing the question difficulty and you're subtracting that guy out. Okay, good. Um and the other thing, this
+
+398
+00:32:13,278 --> 00:32:17,359
+is a fun note. Um I I'm going to mention it because I just kind of think this is
+
+399
+00:32:17,359 --> 00:32:20,880
+fun and cool. Uh this DKL, uh if you've seen lots of KL divergence computations,
+
+400
+00:32:20,880 --> 00:32:27,919
+um this is actually a little non-standard, right? uh because the natural kale divergence estimate is
+
+401
+00:32:27,919 --> 00:32:31,599
+actually just you you take a bunch of samples and then you compute the average
+
+402
+00:32:31,599 --> 00:32:36,720
+of the log ratio which is kind of this inner term over here right um but this
+
+403
+00:32:36,720 --> 00:32:40,720
+one from from gpo actually has these two extra terms it has the log or has the
+
+404
+00:32:40,720 --> 00:32:44,880
+ratio of pi ref over pi theta and has this minus one um and you can kind of
+
+405
+00:32:44,880 --> 00:32:49,200
+convince yourself that if you take the expectation of this with respect to pi
+
+406
+00:32:49,200 --> 00:32:54,240
+theta um you know this is just going to be uh cancelling with this one over
+
+407
+00:32:54,240 --> 00:32:58,798
+here. So this is a control variant scheme that reduces the variance of uh
+
+408
+00:32:58,798 --> 00:33:02,960
+this KL divergence estimate which is cool uh because maybe you all need to
+
+409
+00:33:02,960 --> 00:33:08,880
+estimate KL divergence from samples. Uh this equation two is just a slightly nicer way of estimating that exact same
+
+410
+00:33:08,880 --> 00:33:15,519
+thing. Okay. Um and GRPO is really nice. Um oh one last note. Um if you're only taking
+
+411
+00:33:15,519 --> 00:33:20,000
+one step which is doing the pure online case, right? all this clipping stuff
+
+412
+00:33:20,000 --> 00:33:25,919
+just kind of disappears and all you're doing is policy gradients, right? Policy gradient is just upweing good stuff and
+
+413
+00:33:25,919 --> 00:33:31,759
+downweing bad stuff where the rewards that I'm multiplying the policy gradients by is this avi. So it's just
+
+414
+00:33:31,759 --> 00:33:39,440
+like an incredibly simple algorithm for the the truly online case where you're not doing multiple steps on a single
+
+415
+00:33:39,440 --> 00:33:46,640
+example. Um so there's multiple kind of different repositories um for gpo implementations. Um I I can point you to
+
+416
+00:33:46,640 --> 00:33:52,558
+several including uh this one that I sort of copied and put onto this slide
+
+417
+00:33:52,558 --> 00:33:56,960
+here. Um but basically uh I can just say that it's it's exactly the way you think
+
+418
+00:33:56,960 --> 00:34:01,679
+it would go. Um sort of in the outer loop you would compute the reward for
+
+419
+00:34:01,679 --> 00:34:05,599
+each nor roll out you normalize for each group the the mean and the variance of
+
+420
+00:34:05,599 --> 00:34:09,519
+the rewards. You'd compute the KL term in this case per sequence which isn't
+
+421
+00:34:09,519 --> 00:34:14,719
+quite right uh for the more heavyweight implementations. And then you do gradient updates on the loss. And this
+
+422
+00:34:14,719 --> 00:34:19,760
+is you know one example of the loss computation that you also have here. Um
+
+423
+00:34:19,760 --> 00:34:24,239
+and the advantage computation unlike in the uh PO case is just really really
+
+424
+00:34:24,239 --> 00:34:27,679
+simple. Uh this is almost exactly you know line for line the equations that I
+
+425
+00:34:27,679 --> 00:34:32,559
+showed you with just one minor difference that's not shown in the equation which is that you know as you
+
+426
+00:34:32,559 --> 00:34:39,039
+do in almost everything because we're dividing by the standard deviation you add a tiny fudge factor of 1 eg4 to to
+
+427
+00:34:39,039 --> 00:34:41,519
+make sure it doesn't numerically uh blow up on you right and you'll have to do
+
+428
+00:34:41,519 --> 00:34:46,320
+this in the assignment as well. you'll have to add a little epsilon uh to your
+
+429
+00:34:46,320 --> 00:34:54,239
+gpo uh setup. So, how well does this work? Um gpo works pretty well. Um this is from the
+
+430
+00:34:54,239 --> 00:34:58,639
+original uh deepseek math paper. Um and I'll get back to this later because it
+
+431
+00:34:58,639 --> 00:35:04,000
+is interesting um to look at this this plot and this result in light of later
+
+432
+00:35:04,000 --> 00:35:08,800
+R1 results. Um they show essentially uh the two fine-tuning based methods uh RF
+
+433
+00:35:08,800 --> 00:35:12,719
+and online RFT. This is basically a a fairly weak baseline I would say. um
+
+434
+00:35:12,719 --> 00:35:16,400
+where what you're doing is you're only looking at examples that sort of get the
+
+435
+00:35:16,400 --> 00:35:19,679
+right answer. They're doing math in this case. So you only get examples where you
+
+436
+00:35:19,679 --> 00:35:23,280
+get the right answer and you fine-tune on your own outputs that got the right
+
+437
+00:35:23,280 --> 00:35:30,079
+answer. Right? Reinforcing uh correct answers with fine-tuning. Um GRPO with outcome level rewards where you only get
+
+438
+00:35:30,079 --> 00:35:33,760
+a correct or not answer is the yellow. The blue one is process level rewards
+
+439
+00:35:33,760 --> 00:35:37,199
+where it's kind of you got a system that looks at each step of your reasoning and
+
+440
+00:35:37,199 --> 00:35:40,079
+sort of gives you a grade for that. And they're arguing, you know, maybe process
+
+441
+00:35:40,079 --> 00:35:43,440
+rewards are better. We'll talk a little bit more about that later. But in in
+
+442
+00:35:43,440 --> 00:35:51,199
+either case, you see that gpo works and it works um pretty well. Okay, any questions about the basic gpo
+
+443
+00:35:51,199 --> 00:35:54,320
+piece before we move on to kind of details about gpo and thinking kind of
+
+444
+00:35:54,320 --> 00:36:00,559
+deeply about what's actually happening in the algorithm?
+
+445
+00:36:00,559 --> 00:36:04,800
+Good. Okay. So now let's think about uh the difference between uh gpo and po and
+
+446
+00:36:04,800 --> 00:36:09,519
+and what we've done and what's different. Okay. So really there's, you know, as I was saying, only one
+
+447
+00:36:09,519 --> 00:36:15,920
+difference, although it's a really important difference. It's replacing the advantage estimator with this thing,
+
+448
+00:36:15,920 --> 00:36:22,480
+right? The the mean uh or the zcore, let's say, of the rewards. Um, and so
+
+449
+00:36:22,480 --> 00:36:26,800
+now I'm going to kind of go back to uh the policy gradient theorem or the
+
+450
+00:36:26,800 --> 00:36:34,880
+policy gradient result, and I'm going to think through this result with you, right? So when we uh when we take a
+
+451
+00:36:34,880 --> 00:36:39,920
+policy gradient update, right, what can we do? So I'll just go back a couple
+
+452
+00:36:39,920 --> 00:36:46,719
+slides, right? Um on this slide, we've got right here at the very top policy gradients. This is
+
+453
+00:36:46,719 --> 00:36:51,679
+the most basic RL algorithm that you can do, right? You take gradients where you
+
+454
+00:36:51,679 --> 00:36:55,599
+multiply the log probability gradients with the reward. Right? This is something that I'm always allowed to do.
+
+455
+00:36:55,599 --> 00:36:59,519
+This is a mathematical equivalence. Right? Now, one other thing I can do is
+
+456
+00:36:59,519 --> 00:37:04,960
+called baselining. I can take this reward Z and I can subtract any constant
+
+457
+00:37:04,960 --> 00:37:11,440
+uh or any in fact any random variable that doesn't depend on uh Z itself. Um
+
+458
+00:37:11,440 --> 00:37:14,800
+and this would still be a valid uh policy gradient. Right? So so this
+
+459
+00:37:14,800 --> 00:37:20,079
+baselining thing is really important because what you're going to try to do is you're going to try to subtract
+
+460
+00:37:20,079 --> 00:37:28,159
+constants that give you lower variances on this expectation. Right? So that's called baselining. Um and if we go here,
+
+461
+00:37:28,159 --> 00:37:31,199
+you know, that's kind of um a classic result that you can look up in Senarto.
+
+462
+00:37:31,199 --> 00:37:37,440
+They say, okay, look, we've got the policy gradient. You can subtract out any baseline B of S because B of S, you
+
+463
+00:37:37,440 --> 00:37:42,960
+know, when we sum it up across the policy is going to be zero, right? Um so
+
+464
+00:37:42,960 --> 00:37:48,320
+this is fine, right? We can always baseline, but let's look at this A of A
+
+465
+00:37:48,320 --> 00:37:51,920
+of I. Is this a baseline? Well, um, we're subtracting the mean and that's
+
+466
+00:37:51,920 --> 00:37:56,559
+kind of a baseline because all the other rewards are not dependent on RO of I. So
+
+467
+00:37:56,559 --> 00:38:00,719
+maybe that's okay. I mean, technically this notation includes RO of II, but if
+
+468
+00:38:00,719 --> 00:38:04,159
+I remove that, that's a valid baseline. But one thing that's really weird is I'm
+
+469
+00:38:04,159 --> 00:38:11,280
+dividing by the standard deviation here, right? That that's not something that really seems allowed according to this
+
+470
+00:38:11,280 --> 00:38:19,039
+derivation in Senardau. Um, and that turns out to be a problem. uh some folks uh that have gone and you
+
+471
+00:38:19,039 --> 00:38:26,320
+know reanalyzed gpo and its behaviors basically argue that gpo has two things that at least mathematically are a
+
+472
+00:38:26,320 --> 00:38:29,838
+little bit off. Um and the first thing is this division by standard deviation
+
+473
+00:38:29,838 --> 00:38:34,159
+right as I was kind of talking you through just now this breaks that sort
+
+474
+00:38:34,159 --> 00:38:39,199
+of you know contract that a baseline just needs to be subtracting a zero mean
+
+475
+00:38:39,199 --> 00:38:44,960
+uh variable uh that's you know independent of of my draw. Um, and the
+
+476
+00:38:44,960 --> 00:38:49,039
+other thing that GRPO does, uh, which I did it kind of, sorry, I glossed over
+
+477
+00:38:49,039 --> 00:38:55,519
+when I previously presented it, is that it's actually dividing, um, kind of the
+
+478
+00:38:55,519 --> 00:38:59,119
+rewards by the length of the output. Um, and that's going to have that's also a
+
+479
+00:38:59,119 --> 00:39:05,679
+little bit weird according to the policy gradient theorem. This is not something that would naturally show up. Um, and so
+
+480
+00:39:05,679 --> 00:39:11,358
+these authors who did like this this pretty interesting study of uh GRPO algorithms kind of argue that maybe we
+
+481
+00:39:11,358 --> 00:39:15,760
+should just get rid of these two things. And if you do, then you'll actually have
+
+482
+00:39:15,760 --> 00:39:21,920
+much shorter output length and higher reward without having much longer responses.
+
+483
+00:39:21,920 --> 00:39:27,199
+Um, and so let's talk about these results uh, you know, uh, carefully for
+
+484
+00:39:27,199 --> 00:39:30,960
+each one of these two fixes. Um and hopefully by talking through these you
+
+485
+00:39:30,960 --> 00:39:36,239
+will gain an intuition about how the RL algorithm works. Right? So first I want
+
+486
+00:39:36,239 --> 00:39:42,239
+to talk about uh the standard deviation. Um this one's maybe somewhat obvious what it's doing. Um okay let me let me
+
+487
+00:39:42,239 --> 00:39:46,320
+go back because I think it's easier to talk about when I'm highlighting the
+
+488
+00:39:46,320 --> 00:39:51,920
+equation here. Um so I'm dividing the advantage by the standard deviation. So what does that mean? When the standard
+
+489
+00:39:51,920 --> 00:39:55,519
+deviation is small, right, the reward is going to be amplified. it's going to be
+
+490
+00:39:55,519 --> 00:40:01,039
+more important for me to optimize that group when the standard deviations are small, right? And when is the standard
+
+491
+00:40:01,039 --> 00:40:04,480
+deviation small? Well, it's when the problem is too easy or it's too hard,
+
+492
+00:40:04,480 --> 00:40:08,800
+right? Because that's when the rewards are either all zero or they're all ones.
+
+493
+00:40:08,800 --> 00:40:15,760
+And so there's a bias in the standard deviation term that upweights problems that are too easy or too hard. Um the
+
+494
+00:40:15,760 --> 00:40:20,480
+authors argue this slows convergence. Maybe true. At the very least, it certainly breaks the validity of the
+
+495
+00:40:20,480 --> 00:40:25,679
+policy gradient. The second thing which is subtle but also interesting is the length normalization.
+
+496
+00:40:25,679 --> 00:40:30,480
+Now let's kind of look at what's happening here. So we have this length
+
+497
+00:40:30,480 --> 00:40:35,119
+normalization before the gpo reward. Now what does that do? If my model got a
+
+498
+00:40:35,119 --> 00:40:40,079
+question wrong, right? Then the best thing to do is I'm receiving negative reward in here. So the best thing to do
+
+499
+00:40:40,079 --> 00:40:43,679
+is to make the response really really long. And if I get the answer right, the
+
+500
+00:40:43,679 --> 00:40:47,838
+best thing to do is to make the answer short so I can sort of maximize my
+
+501
+00:40:47,838 --> 00:40:52,000
+positive reward. Right? So what this does is it actually produces uh a model
+
+502
+00:40:52,000 --> 00:40:55,440
+that kind of BS as aggressively as possible. If the model thinks it can't
+
+503
+00:40:55,440 --> 00:41:01,440
+get the answer right, it just produces the longest possible response, which is a very very bad incentive for you to
+
+504
+00:41:01,440 --> 00:41:06,400
+give the model. Um and so if you fix this, uh what happens is, you know, on
+
+505
+00:41:06,400 --> 00:41:10,480
+various sort of toy tasks like GSMAK and so on, you you can get um a reward
+
+506
+00:41:10,480 --> 00:41:13,599
+that's just as good. The red one is sort of the modified version, but the output
+
+507
+00:41:13,599 --> 00:41:18,800
+length doesn't keep growing and growing and growing. It sort of like stabilizes at a certain point, right? Um and so
+
+508
+00:41:18,800 --> 00:41:26,239
+there is actually some interesting observation that like maybe some of the really long coots that people are seeing
+
+509
+00:41:26,239 --> 00:41:31,280
+in uh things like gRPO are a result of these like actual implementation details
+
+510
+00:41:31,280 --> 00:41:37,599
+and choices rather than inherently long coots being a necessary part of the performance of these models. And I think
+
+511
+00:41:37,599 --> 00:41:44,159
+that's like a very interesting although not fully proven out uh class of hypothesis.
+
+512
+00:41:44,159 --> 00:41:48,960
+Cool. Okay. So that's the GRPO algorithm. Hopefully now you're all familiar with it and I think you now
+
+513
+00:41:48,960 --> 00:41:53,838
+have the background to go through uh all three of these papers now. Uh deep sea
+
+514
+00:41:53,838 --> 00:42:01,199
+car 1, Kimmy 1.5 and uh Quent 3. Um any questions? Yes. So a question about why like
+
+515
+00:42:01,199 --> 00:42:04,880
+operating is bad just to confirm like my understanding. I guess it's bad because
+
+516
+00:42:04,880 --> 00:42:08,800
+like in those in either the very easy or the very hard cases we don't want to
+
+517
+00:42:08,800 --> 00:42:15,599
+actually like aggressively update the model. Yeah. I think this gets into sort
+
+518
+00:42:15,599 --> 00:42:21,039
+of um uh wishy-washy folk theorem territory, but actually some of these papers will talk about this folk theory
+
+519
+00:42:21,039 --> 00:42:25,039
+and so I'll mention it which is what you really want the RL algorithm to do is to
+
+520
+00:42:25,039 --> 00:42:28,960
+get problems that it can like do somewhat well on like it can get some
+
+521
+00:42:28,960 --> 00:42:31,440
+reward on but is not so easy that it can like already solve them right so there's
+
+522
+00:42:31,440 --> 00:42:35,920
+like kind of a curriculum effect where you want to feed the models the right
+
+523
+00:42:35,920 --> 00:42:40,639
+you know level of difficulty and if you're maximizing the that standard deviation that's kind of the wrong
+
+524
+00:42:40,639 --> 00:42:48,000
+direction Right? You're really maxing out the stuff at the extremes that you either already all know or are just way
+
+525
+00:42:48,000 --> 00:42:52,079
+too hard for you to solve. Um, cool. Okay. So, we're going to talk
+
+526
+00:42:52,079 --> 00:42:58,079
+about uh all three of these papers today. R1, uh, Kimmy K1.5, and Quen 3.
+
+527
+00:42:58,079 --> 00:43:02,239
+Um, R1 and K1.5, I think, are pretty interesting because they came out at
+
+528
+00:43:02,239 --> 00:43:06,159
+roughly the same time. Um, sadly, R1 was the only one to to get like a gigantic
+
+529
+00:43:06,159 --> 00:43:12,559
+social uh, what's it called? Uh, reception. Um but both of these actually
+
+530
+00:43:12,559 --> 00:43:15,679
+um show how to do RL based reasoning on like math and other things with LLMs,
+
+531
+00:43:15,679 --> 00:43:21,679
+right? And they because they're contemporaneous um you can kind of see almost two parallel ways to tackle the
+
+532
+00:43:21,679 --> 00:43:28,880
+same problem like which things are similar, which things are different and so on which is great. Um Quinn 3 is the
+
+533
+00:43:28,880 --> 00:43:37,199
+newest of the releases. Um and they do some fairly interesting variations of ideas in R1. Um, and also they have some
+
+534
+00:43:37,199 --> 00:43:39,760
+new kind of tricks that that R1 doesn't have, which I think are pretty
+
+535
+00:43:39,760 --> 00:43:46,358
+interesting things to look at, especially if you're interested in things like inference efficiency, uh, of
+
+536
+00:43:46,358 --> 00:43:54,159
+reasoning models. So, uh, I'll start with R1. Um, I think R1 is, you know, kind of amazing in the
+
+537
+00:43:54,159 --> 00:43:57,519
+sense that it's a it's a, you know, archive paper that launched a whole
+
+538
+00:43:57,519 --> 00:44:03,599
+social phenomenon. Never let your advisers tell you that, you know, your archive papers will never matter. you
+
+539
+00:44:03,599 --> 00:44:07,440
+know, this one uh lost like what almost half a billion dollars of of Nvidia
+
+540
+00:44:07,440 --> 00:44:13,679
+valuation. You two can one day maybe cause that kind of a wave. Um R1, I
+
+541
+00:44:13,679 --> 00:44:18,880
+think, is quite remarkable because you know it in many ways replicates all of
+
+542
+00:44:18,880 --> 00:44:24,880
+the qualitative properties of the 01 recipe in a way that is extremely simple. Um so you know the the key
+
+543
+00:44:24,880 --> 00:44:30,159
+properties that I want to talk through and and you know make sure you all
+
+544
+00:44:30,159 --> 00:44:34,318
+understand. Um the first thing right is that you know it hits the performance
+
+545
+00:44:34,318 --> 00:44:41,358
+targets that open AIO1 set. Everyone was really excited about reasoning model. So this is very exciting. The second thing
+
+546
+00:44:41,358 --> 00:44:45,440
+is that you know it opens up a RL recipe that is not only just like a replicable
+
+547
+00:44:45,440 --> 00:44:50,719
+one but I think more importantly one that is extremely simple right it doesn't have any search it doesn't have
+
+548
+00:44:50,719 --> 00:44:54,960
+any process reward models. I think lots of people at the time thought maybe we
+
+549
+00:44:54,960 --> 00:45:01,119
+need all these complicated pieces to get reasoning models. R1 really shows you don't need any of that, right? And then
+
+550
+00:45:01,119 --> 00:45:07,358
+finally, um there's lots of interesting insights about the interaction between supervised fine-tuning um and RL that I
+
+551
+00:45:07,358 --> 00:45:13,920
+think um continue to be really important. Okay, so uh the starting
+
+552
+00:45:13,920 --> 00:45:18,159
+point of R1 is they build on deepseek math. Um, and actually some of the
+
+553
+00:45:18,159 --> 00:45:25,280
+equations I showed you of GRPO are from Deepseek math where they originally proposed GRPO as an alternative simpler
+
+554
+00:45:25,280 --> 00:45:29,039
+or system more systems efficient variant of PO, right? To them actually the most
+
+555
+00:45:29,039 --> 00:45:33,838
+important piece was they wanted to get rid of the value model just because it's
+
+556
+00:45:33,838 --> 00:45:39,199
+really annoying to have around. Um, but one thing that's really interesting is you know they actually go for this
+
+557
+00:45:39,199 --> 00:45:44,480
+yellow line the outcome supervision which is not actually the best performing model um in deepseek math.
+
+558
+00:45:44,480 --> 00:45:49,039
+talk about that again at the very end of this this section here. So I'll walk
+
+559
+00:45:49,039 --> 00:45:53,519
+through all the different pieces of R1. Um so I'll start with R10 uh which I
+
+560
+00:45:53,519 --> 00:46:00,079
+think of as the controlled setting, right? So R10 um is a very pure form of
+
+561
+00:46:00,079 --> 00:46:06,318
+RL learning. um it basically takes uh essentially the model that is pre-trained plus mid-trained um before
+
+562
+00:46:06,318 --> 00:46:11,039
+doing any RLHF or instruction tuning and then throws it into the uh math RL loop
+
+563
+00:46:11,039 --> 00:46:15,760
+and then they try to find out how well does that do right so the details here
+
+564
+00:46:15,760 --> 00:46:20,318
+um how do they do the reinforcement learning well they have a bunch of uh
+
+565
+00:46:20,318 --> 00:46:25,760
+sort of mathish tasks the data is not public um they take deepseeek v3 as
+
+566
+00:46:25,760 --> 00:46:29,280
+their kind of base model um and then their rewards there's two forms of
+
+567
+00:46:29,280 --> 00:46:32,800
+rewards that they use. One of them is an accuracy reward. So like did it get the
+
+568
+00:46:32,800 --> 00:46:39,920
+math question correct? Right? It's a correct or not reward. It's binary. Uh they have a format reward that basically
+
+569
+00:46:39,920 --> 00:46:43,358
+forces the model to put its coot within like thinking tags like thinking start
+
+570
+00:46:43,358 --> 00:46:50,880
+thinking end of thinking tags, right? And that's important if you want your model to have these like long coots uh
+
+571
+00:46:50,880 --> 00:46:55,599
+being used. Now, um the format reward feels like something that doesn't matter, but from many papers and from
+
+572
+00:46:55,599 --> 00:47:00,159
+having talked to many people, apparently it is a pretty critical part of actually
+
+573
+00:47:00,159 --> 00:47:05,519
+getting this whole like reasoning RL thing to work. Um once you do this
+
+574
+00:47:05,519 --> 00:47:09,199
+right, all they're doing is is doing RL on top of the base model. Nothing very
+
+575
+00:47:09,199 --> 00:47:17,358
+fancy, but the results are are pretty striking. they get performance that is getting pretty close to open AIO1 by
+
+576
+00:47:17,358 --> 00:47:21,838
+just doing some RL um on top of of the model that they already had, right? Um
+
+577
+00:47:21,838 --> 00:47:28,400
+without any like, you know, coot fine-tuning or anything like this. Um and there's kind of two things uh that
+
+578
+00:47:28,400 --> 00:47:32,559
+they note in their paper as being really interesting about R10. Um and I want to
+
+579
+00:47:32,559 --> 00:47:38,880
+talk about this because I think it's important to to carefully examine what is happening in R10. So the first thing
+
+580
+00:47:38,880 --> 00:47:43,039
+they say is, "Oh, it's very cool that if you just let the model do RL on this
+
+581
+00:47:43,039 --> 00:47:49,358
+this verifiable rewards, the length of the coot just kind of increases like pretty predictably." Um, and you know,
+
+582
+00:47:49,358 --> 00:47:51,920
+in commentary that I don't know if I necessarily agree with, you know, in the
+
+583
+00:47:51,920 --> 00:47:57,920
+paper they're like, "Oh, it's learning to solve harder and harder problems by thinking harder and harder." It's like,
+
+584
+00:47:57,920 --> 00:48:01,599
+well, maybe. Um, they also, you know, point out it's kind of cool that, you
+
+585
+00:48:01,599 --> 00:48:06,960
+know, they learn, you know, phenomena like backtracking. They call this the aha moment. I think much has been made
+
+586
+00:48:06,960 --> 00:48:11,280
+uh about this in sort of public discourse that wow it's cool that RL
+
+587
+00:48:11,280 --> 00:48:15,760
+training can give models these kind of emergent insights. Um I'll kind of refer
+
+588
+00:48:15,760 --> 00:48:19,440
+you back to the the doctor gpo paper the one that was talking about the
+
+589
+00:48:19,440 --> 00:48:24,400
+corrections to GRPO. Um and I think they have honestly pretty good and interesting arguments that both of these
+
+590
+00:48:24,400 --> 00:48:28,719
+are not particularly interesting phenomena. Like first of all they argue that like the length just goes up
+
+591
+00:48:28,719 --> 00:48:33,679
+because of the biased objective not because you know it's an inherently interesting object. Um and second they
+
+592
+00:48:33,679 --> 00:48:37,599
+they argue well if you just run deepseeek v3 on a bunch of math
+
+593
+00:48:37,599 --> 00:48:42,719
+questions it'll also sometimes output things like aha I can do this or that
+
+594
+00:48:42,719 --> 00:48:47,519
+which is maybe not like a deeply new phenomenon that arises from RL. Um you
+
+595
+00:48:47,519 --> 00:48:51,358
+know both of these seem like given more recent evidence kind of credible uh
+
+596
+00:48:51,358 --> 00:48:58,079
+things that like maybe there's nothing like emergent and special about R10 but it is actually working very well right
+
+597
+00:48:58,079 --> 00:49:01,838
+that is a good math model. So R10 you can think of as kind of a
+
+598
+00:49:01,838 --> 00:49:06,318
+research setting, right? They're taking a controlled model, they're doing something very controlled on top of it,
+
+599
+00:49:06,318 --> 00:49:10,239
+which is math RL, and they get a good model out, right? But if you're trying
+
+600
+00:49:10,239 --> 00:49:13,280
+to build a really strong model that you're going to ship to the world, um
+
+601
+00:49:13,280 --> 00:49:17,358
+this is not what you're going to do, right? You're going to like basically do
+
+602
+00:49:17,358 --> 00:49:20,559
+everything that you can to get the best model that you can, right? So what would
+
+603
+00:49:20,559 --> 00:49:27,119
+you do uh in that sort of more unrestricted setting? Well, um you're going to maybe insert some supervised
+
+604
+00:49:27,119 --> 00:49:32,639
+fine-tuning. you're going to take, you know, coots from, you know, some undisclosed source and you're going to
+
+605
+00:49:32,639 --> 00:49:36,000
+fine-tune your deepseeek model on that before you do your RL. And after you do
+
+606
+00:49:36,000 --> 00:49:39,920
+that, right, you don't want your model to be kind of like this math savant that
+
+607
+00:49:39,920 --> 00:49:44,800
+can't do anything else. So, you're going to, you know, apply your usual post-training pipeline on top of that to
+
+608
+00:49:44,800 --> 00:49:48,960
+make sure that it can do all the other tasks that, you know, people normally
+
+609
+00:49:48,960 --> 00:49:52,480
+want to use these models for, right? So, this is kind of the the the pipeline
+
+610
+00:49:52,480 --> 00:50:00,079
+differences. Um, and so the key differences both within the pipeline and uh within the RL is they do SFT
+
+611
+00:50:00,079 --> 00:50:05,199
+initialization to try to get the model to to know how to do long coots without
+
+612
+00:50:05,199 --> 00:50:10,400
+starting with RL. They add a language consistency reward in order to make sure that the chains of thought
+
+613
+00:50:10,400 --> 00:50:16,400
+remain in a single language and then they do you know a secondary RLHF stage
+
+614
+00:50:16,400 --> 00:50:19,280
+um kind of at the end. So I think this makes a lot of sense, right? Every time
+
+615
+00:50:19,280 --> 00:50:24,480
+you want to do something advanced like reinforcement learning, um you're probably going to start by doing a
+
+616
+00:50:24,480 --> 00:50:29,199
+little bit of supervised fine-tuning. Um and so even in sort of reasoning models
+
+617
+00:50:29,199 --> 00:50:34,318
+or long coot models like deepcar1, this is the case, right? You start with uh
+
+618
+00:50:34,318 --> 00:50:41,760
+long coot supervised fine-tuning data and then you're going to, you know, do RL. Um I will point out that the uh
+
+619
+00:50:41,760 --> 00:50:46,800
+description of where they get this data and what this data is remains very very
+
+620
+00:50:46,800 --> 00:50:52,318
+vague. like they don't tell us like what was the coot data derived from um how
+
+621
+00:50:52,318 --> 00:50:57,199
+did they filter it I don't really have any idea based on reading the R1 paper
+
+622
+00:50:57,199 --> 00:51:02,480
+um the claimed benefit of this is that if you coot the model on sorry if you
+
+623
+00:51:02,480 --> 00:51:06,159
+sft the model on long let's say English coots then this gives you an
+
+624
+00:51:06,159 --> 00:51:09,599
+interpretability benefit right as you do RL you're not going to get like weird
+
+625
+00:51:09,599 --> 00:51:12,880
+gibberish it's going to kind of keep the model closer to these like more
+
+626
+00:51:12,880 --> 00:51:17,599
+interpretable coots that you started out with um So and and that would be kind of
+
+627
+00:51:17,599 --> 00:51:21,039
+good for users, right? Like as you're, you know, using a math model, it would
+
+628
+00:51:21,039 --> 00:51:26,559
+be nice to see its reasoning uh as it goes. Um and an additional thing, right?
+
+629
+00:51:26,559 --> 00:51:31,199
+So so when they do SFT initialization, they use a ton of data. But one really
+
+630
+00:51:31,199 --> 00:51:37,199
+interesting thing is that for a lot of models, even a tiny amount of uh SFT on
+
+631
+00:51:37,199 --> 00:51:41,679
+these kinds of like long coot data can be good. Um, one thing that some of my
+
+632
+00:51:41,679 --> 00:51:48,318
+students in collaboration with Percy, uh, we did was, um, basically take a bunch of long coots from Gemini 2.0
+
+633
+00:51:48,318 --> 00:51:55,280
+flash thinking and, you know, fine-tune Quen 2.5. And maybe surprisingly, you know, with just a thousand examples, you
+
+634
+00:51:55,280 --> 00:52:02,000
+know, you get really, really high, you know, uh, math benchmark accuracy, um, with just a little bit of long coot
+
+635
+00:52:02,000 --> 00:52:05,679
+fine-tuning. So I think both of these are really pointing to the fact that the
+
+636
+00:52:05,679 --> 00:52:10,000
+base model already has a lot of kind of like thinking capabilities that you're
+
+637
+00:52:10,000 --> 00:52:15,119
+just like kind of priming and extracting um from the model. Um and after that of
+
+638
+00:52:15,119 --> 00:52:19,280
+course you're going to do um RL, right? So after you've gotten the the model set
+
+639
+00:52:19,280 --> 00:52:23,599
+up with SFT, you know, as with kind of the instruction tuning and RHF pipeline,
+
+640
+00:52:23,599 --> 00:52:26,639
+so you start with SFT and then you do RL to to basically get the model to to
+
+641
+00:52:26,639 --> 00:52:33,199
+actually optimize the rewards you're looking for. Um, the RL part is basically the same as R10. Not not huge
+
+642
+00:52:33,199 --> 00:52:39,039
+differences, but with a a minor difference that you're going to add a language consistency loss. And they have
+
+643
+00:52:39,039 --> 00:52:42,239
+I think I think this note is is pretty interesting. This is a minor note, but
+
+644
+00:52:42,239 --> 00:52:47,599
+I'll describe it anyway where they basically say um, you know, they add this like language consistency reward
+
+645
+00:52:47,599 --> 00:52:51,280
+because, you know, during the training process, if they just let the model RL,
+
+646
+00:52:51,280 --> 00:52:56,800
+they find that actually the coot will language mix like it will switch between languages. Um, and if many of
+
+647
+00:52:56,800 --> 00:53:00,800
+you have kind of seen people playing with um, reasoning models, um, I've seen
+
+648
+00:53:00,800 --> 00:53:05,199
+people on the internet post things like, oh, it's kind of weird that like Grock 3
+
+649
+00:53:05,199 --> 00:53:08,559
+like suddenly switches to Chinese and the coot. And this is kind of consistent
+
+650
+00:53:08,559 --> 00:53:12,719
+with those kinds of things that if you aggressively RL a model, like actually,
+
+651
+00:53:12,719 --> 00:53:18,318
+you know, there's natural tendencies for models to language mix um, rather than staying in a single language. So it
+
+652
+00:53:18,318 --> 00:53:25,039
+actually requires an additional reward to keep it in the single language.
+
+653
+00:53:25,039 --> 00:53:29,760
+Um and then finally after you've done RL on like math and other verifiable
+
+654
+00:53:29,760 --> 00:53:33,760
+domains you basically layer on the usual post training. So you do uh instruction
+
+655
+00:53:33,760 --> 00:53:38,079
+tuning and then you do sort of the the pair wise preference tuning um
+
+656
+00:53:38,079 --> 00:53:42,400
+afterwards right so uh they do an SFT spe where they combine both reasoning
+
+657
+00:53:42,400 --> 00:53:46,880
+data um on non-verifiable tasks like write a proof of something um these are
+
+658
+00:53:46,880 --> 00:53:50,400
+not verifiable and then so they use their own model as a judge for whether
+
+659
+00:53:50,400 --> 00:53:54,318
+or not they got the answer correct. um they have non-reasoning data like sort
+
+660
+00:53:54,318 --> 00:53:59,358
+of you know write a nice essay um and they use the same SFT data set as what
+
+661
+00:53:59,358 --> 00:54:04,639
+they used for uh Deepseek V3 and then finally for RLHF they actually still use
+
+662
+00:54:04,639 --> 00:54:09,838
+GRPO for RLHF which is kind of cool they use the same RL algorithm for everything
+
+663
+00:54:09,838 --> 00:54:13,838
+um and then they um basically just follow the V3 RLHF pipeline like there's
+
+664
+00:54:13,838 --> 00:54:21,280
+not really anything different for this post-training part right um how well does it work um works very very well I
+
+665
+00:54:21,280 --> 00:54:25,679
+think Many of you probably experienced this as well, right? Like R1 was in many
+
+666
+00:54:25,679 --> 00:54:29,519
+ways a shock because it matched the O1 performance, you know, really kind of
+
+667
+00:54:29,519 --> 00:54:33,358
+across the board on a very simple recipe, right? Like as I describe this,
+
+668
+00:54:33,358 --> 00:54:37,920
+I don't think any of you found any of it particularly surprising. Um, but the the
+
+669
+00:54:37,920 --> 00:54:44,079
+uh outcomes kind of speak for themselves. You know, you've got sort of on the English tasks basically, you
+
+670
+00:54:44,079 --> 00:54:48,318
+know, tied or matching uh 01 on across the board. really slightly worse on code
+
+671
+00:54:48,318 --> 00:54:54,960
+models but very very close really across all these different um tasks. The final
+
+672
+00:54:54,960 --> 00:54:59,519
+thing that uh the R1 paper showed is that you can take these big big models
+
+673
+00:54:59,519 --> 00:55:04,000
+and you can distill them into other models. So you can take your big deepsee
+
+674
+00:55:04,000 --> 00:55:07,119
+R1 and you can take those chains of thought like in their case they take
+
+675
+00:55:07,119 --> 00:55:13,358
+almost a million chains of thought and then they fine-tune Quen with those chains of thought and they actually get
+
+676
+00:55:13,358 --> 00:55:16,880
+big boosts in sort of math performance relative to the base model which is only
+
+677
+00:55:16,880 --> 00:55:23,199
+getting something like 50% uh performance on on Amy for for the 32B model. So they get 25 plus% boost on
+
+678
+00:55:23,199 --> 00:55:30,318
+this task which is which is pretty surprising.
+
+679
+00:55:30,318 --> 00:55:36,159
+Cool. And then uh finally um there's two I think interesting and good observations from R1 and I think
+
+680
+00:55:36,159 --> 00:55:40,079
+scientifically maybe this was the the biggest contribution of R1 in a way. So
+
+681
+00:55:40,079 --> 00:55:44,318
+I think R1 maybe had three contributions scientifically, right? One of it was it
+
+682
+00:55:44,318 --> 00:55:50,318
+showed that outcome based rewards with GRPO works, right? It's like the positive proof and then R1 also had two
+
+683
+00:55:50,318 --> 00:55:55,119
+other kind of like negative results kind of uh contributions and they are sort of
+
+684
+00:55:55,119 --> 00:55:59,679
+contained in the very last part of the R1 report and they basically say okay
+
+685
+00:55:59,679 --> 00:56:05,358
+like we tried two things uh like pretty extensively. We tried PRM and we also
+
+686
+00:56:05,358 --> 00:56:09,519
+tried MCTS. Um, and neither of those really helped us at all on like
+
+687
+00:56:09,519 --> 00:56:13,838
+replicating something like 01, right? And so to to get into a little bit of
+
+688
+00:56:13,838 --> 00:56:19,519
+detail, right, PRM are basically uh process reward models. Those are kind of like uh systems that can give you
+
+689
+00:56:19,519 --> 00:56:22,880
+intermediate rewards on a proof, right? So when your model is giving a chain of
+
+690
+00:56:22,880 --> 00:56:26,239
+thought, a PRM would be able to say, "Oh, you went wrong at this step in the
+
+691
+00:56:26,239 --> 00:56:32,798
+middle, right?" And obviously that is much richer and very powerful form of feedback. an RL algorithm can make
+
+692
+00:56:32,798 --> 00:56:39,838
+really really good use of a PRM. But unfortunately, it's also very difficult to get a PRM in the first place. And so,
+
+693
+00:56:39,838 --> 00:56:44,880
+you know, R1 um and the Deepseek math people like they had gone down this road
+
+694
+00:56:44,880 --> 00:56:47,838
+of doing uh PRM for a while and they kind of concluded this doesn't work
+
+695
+00:56:47,838 --> 00:56:53,440
+quite as well as outcome based rewards. And thus far, I think outcomebased rewards remain the way that in which you
+
+696
+00:56:53,440 --> 00:56:59,920
+would build these models. The second thing that I think hasn't uh really panned out is searchbased methods. I
+
+697
+00:56:59,920 --> 00:57:05,599
+think lots of people were interested in search based approaches to reasoning. Thus far at least it hasn't really
+
+698
+00:57:05,599 --> 00:57:10,480
+panned out in the same way that RL and outcome based rewards um has that that
+
+699
+00:57:10,480 --> 00:57:16,239
+remains I think kind of the strongest uh kind of baseline and system um in this
+
+700
+00:57:16,239 --> 00:57:23,000
+this universe. Okay. So any questions about um R1 like kind of their setup or
+
+701
+00:57:23,000 --> 00:57:27,760
+any of the other findings? Yes. PRM GRPO and PRM are kind of two
+
+702
+00:57:27,760 --> 00:57:31,679
+different Oh yes. Oh yeah. Yeah. That's right. Yes. Okay. Good. Sorry. I said I was
+
+703
+00:57:31,679 --> 00:57:36,159
+going to mention it, but I didn't. So that is totally on me. That's right.
+
+704
+00:57:36,159 --> 00:57:40,960
+Exactly. Um and so I think especially for the the PRM, I think it's really
+
+705
+00:57:40,960 --> 00:57:47,519
+interesting and telling that in DeepSeek math, you know, they were very much convinced by sort of the strength of the
+
+706
+00:57:47,519 --> 00:57:51,440
+PRM, which is this blue line with PS. And then in R1, they, you know,
+
+707
+00:57:51,440 --> 00:57:57,199
+concluded that actually this approach that had worked for Deepseek math was not really going to work for R1. and
+
+708
+00:57:57,199 --> 00:58:04,639
+they had gone with outcome based uh rewards. Yeah, thank you for reminding me. Um I was about to to forget my
+
+709
+00:58:04,639 --> 00:58:10,798
+promise there. Uh yes consistency is that for I guess ease of
+
+710
+00:58:10,798 --> 00:58:17,199
+understanding or is do they actually know how it protects performance? Yeah. So so um yeah in this note here they
+
+711
+00:58:17,199 --> 00:58:23,920
+basically say um if you ablate away the language uh consistency experiment it results in degradation of the model's
+
+712
+00:58:23,920 --> 00:58:28,480
+performance. Um, but they're gonna put it in anyway because they prefer to have
+
+713
+00:58:28,480 --> 00:58:34,719
+coots that are more readable to humans. Um, it's an interesting trade-off. Um, there have been lots of research about
+
+714
+00:58:34,719 --> 00:58:41,039
+whether coots are faithful and they're not truly faithful. We kind of know that. Um, but maybe it's better to have
+
+715
+00:58:41,039 --> 00:58:45,519
+a slightly more faithful coot than to have the extra, I don't know, half
+
+716
+00:58:45,519 --> 00:58:51,358
+percentage point performance on Amy. Uh, yes. translated out the end, but if you if
+
+717
+00:58:51,358 --> 00:58:59,039
+what you care about is that someone can read it, like so uh I mean I'm sure they can do like
+
+718
+00:58:59,039 --> 00:59:05,679
+translations or or other kinds of like post-processing to make the coots better. And in some ways you might think
+
+719
+00:59:05,679 --> 00:59:09,119
+of uh OpenAI and and these other vendors efforts to like summarize the coots as
+
+720
+00:59:09,119 --> 00:59:14,719
+being very similar, right? Like because the raw coots are probably much messier and then they probably like sort of
+
+721
+00:59:14,719 --> 00:59:18,880
+rationalize it away. Um that is one way and I think that is an effective way to
+
+722
+00:59:18,880 --> 00:59:22,480
+to get interpretability. Um but I do think if you're interested in somehow if
+
+723
+00:59:22,480 --> 00:59:29,199
+you aesthetically believe that the raw coot is very important for monitoring and and you know closer interpretability
+
+724
+00:59:29,199 --> 00:59:40,559
+then I do think you do want something like this. Right. Cool. Okay. Um so now we're going to
+
+725
+00:59:40,559 --> 00:59:45,440
+move on to uh Kimmy K1.5. Um and why do we study this one? Um, if you look at
+
+726
+00:59:45,440 --> 00:59:50,318
+the timestamps for when R1 and K1.5 were released, it's it's kind of, you know,
+
+727
+00:59:50,318 --> 00:59:56,639
+contemporaneous. Um, and it achieves very similar results. It does so using outcome based rewards in RL. It doesn't
+
+728
+00:59:56,639 --> 01:00:00,960
+use the same algorithm. It has kind of different details and different interesting insights. And so we can
+
+729
+01:00:00,960 --> 01:00:08,079
+learn about kind of what's the same, what's different, and maybe, you know, what parts are maybe important in this
+
+730
+01:00:08,079 --> 01:00:11,760
+process. Um so to you know just show you the headline result before we start just
+
+731
+01:00:11,760 --> 01:00:16,960
+to to get you to to believe that this is a paper that's you know worth being
+
+732
+01:00:16,960 --> 01:00:22,400
+discussed here right um Kim K 1.5 is the dark blue bars here um you can see
+
+733
+01:00:22,400 --> 01:00:26,719
+openai's 01 as the the next highest bar so they're you know beating or matching
+
+734
+01:00:26,719 --> 01:00:33,838
+01 across the board on a bunch of important tasks and they do basically uh
+
+735
+01:00:33,838 --> 01:00:38,480
+things similar to R1. So they do SFT, they do RL, they have a different RL
+
+736
+01:00:38,480 --> 01:00:41,760
+algorithm, but they do RL. Um they also describe their data set construction in
+
+737
+01:00:41,760 --> 01:00:47,039
+a little bit more detail. And this actually gets used in in Quinn 3 later,
+
+738
+01:00:47,039 --> 01:00:51,519
+so it's worth uh discussing. So let me talk through data. Um as Percy said
+
+739
+01:00:51,519 --> 01:00:57,199
+earlier, maybe data is the most important thing in your whole pipeline. And so we should always pay attention
+
+740
+01:00:57,199 --> 01:01:06,239
+when people talk about their kind of data curation, you know, strategies in like a large scale training paper. Um
+
+741
+01:01:06,239 --> 01:01:11,440
+and so Kimmy 1.5 does several things to try to curate their data set. So what
+
+742
+01:01:11,440 --> 01:01:15,760
+they first do is they try to balance across different domains like they have
+
+743
+01:01:15,760 --> 01:01:22,798
+an automated I'm guessing um LM based tagging system to categorize um basically math questions by different
+
+744
+01:01:22,798 --> 01:01:27,039
+domains and disciplines and then they kind of balance across these to try to
+
+745
+01:01:27,039 --> 01:01:32,400
+get diversity across different domains. um they exclude even though these are verifiable multiple choice and true
+
+746
+01:01:32,400 --> 01:01:36,880
+false questions because they argue that these are too easy to to hack or to
+
+747
+01:01:36,880 --> 01:01:45,679
+randomly guess. So they're only looking for verifiable answers that are kind of short and can be evaluated by things
+
+748
+01:01:45,679 --> 01:01:49,599
+like regex um or or LM. Um and this is maybe the most interesting piece of the
+
+749
+01:01:49,599 --> 01:01:54,960
+curation here. Um what they do is they take the model uh that doesn't do any
+
+750
+01:01:54,960 --> 01:02:01,920
+reasoning uh you know their SFT model um and they have this model generate uh 10
+
+751
+01:02:01,920 --> 01:02:08,960
+answers um and the pass rate is used um in order to determine whether to include
+
+752
+01:02:08,960 --> 01:02:12,880
+that example uh or not. Um and I I think the the exact thing they use for their
+
+753
+01:02:12,880 --> 01:02:20,079
+latest selection strategy is they only select examples that fail best of eight. So if it if if they can get any one out
+
+754
+01:02:20,079 --> 01:02:25,440
+of a correct, then it's excluded for being too easy. Um SFT data similar to
+
+755
+01:02:25,440 --> 01:02:28,318
+to R1, very little description. Who knows where they got that from? Um they
+
+756
+01:02:28,318 --> 01:02:34,318
+just say they do some prompt engineering. So clearly it was distilled from something else. Uh but we don't
+
+757
+01:02:34,318 --> 01:02:38,480
+really know what they distilled off of. Um so I'll talk about the RL algorithm.
+
+758
+01:02:38,480 --> 01:02:46,480
+The Kimmy one's kind of interesting. Um it's a different variation. It's actually maybe closer to DPO in a way.
+
+759
+01:02:46,480 --> 01:02:49,838
+um but you end up with a you know algorithm that I think you'll very much
+
+760
+01:02:49,838 --> 01:02:53,679
+recognize. So you can kind of think of this in a very interesting way as
+
+761
+01:02:53,679 --> 01:03:00,559
+convergent evolution of of RL algorithms. So you start once again at the very top. This is our you know
+
+762
+01:03:00,559 --> 01:03:04,960
+classic goal. You know we're sampling from a data set. We're sampling from our
+
+763
+01:03:04,960 --> 01:03:09,920
+policy. We want to maximize rewards. We don't want to be too far from our base
+
+764
+01:03:09,920 --> 01:03:14,159
+policy. So this is the KL regularizer. Um you know if you remember our DPO
+
+765
+01:03:14,159 --> 01:03:20,239
+derivation you make a nonparametric assumption you say pi star is the optimal policy is an arbitrary function
+
+766
+01:03:20,239 --> 01:03:24,880
+that means that the reward can be written as you know the log normalizer
+
+767
+01:03:24,880 --> 01:03:29,760
+plus the ratio of policies right this is the exact same thing we did in dpo and
+
+768
+01:03:29,760 --> 01:03:33,679
+now you know in dpo what we did was we took these rewards and we plugged them
+
+769
+01:03:33,679 --> 01:03:39,358
+into the kind of the Bradley Terry preference function we don't have this here right we we're not doing pair wise
+
+770
+01:03:39,358 --> 01:03:46,000
+preferences so we don't actually take that step. Instead, we write down this equation and we say we know that for the
+
+771
+01:03:46,000 --> 01:03:50,798
+optimal policy, we're going to have equality here. And so, all we're going to do is we're going to make this a
+
+772
+01:03:50,798 --> 01:03:53,599
+difference and we're going to add a squared loss on top, right? We're going
+
+773
+01:03:53,599 --> 01:03:57,599
+to try to drive the left and the right sides close by just adding a squared
+
+774
+01:03:57,599 --> 01:04:03,039
+loss. It's a reasonable thing to do. People have done things like this before. Um, and this gives us our loss.
+
+775
+01:04:03,039 --> 01:04:07,119
+It's basically trying to drive uh the right side and the left side of
+
+776
+01:04:07,119 --> 01:04:14,159
+something that should be an equality for the optimal policy close together. And well, this is a little bit of an exotic
+
+777
+01:04:14,159 --> 01:04:20,960
+looking object or maybe exotic looking initially, but if you take the gradient, it just looks a lot like gRPO. Uh you
+
+778
+01:04:20,960 --> 01:04:26,159
+know, you've got your gradients of your policy, right? This is your policy gradient stuff. Um and you've got a
+
+779
+01:04:26,159 --> 01:04:33,039
+baseline reward. And actually, what's the baseline reward? I'm just going to average um the R within my batch, right?
+
+780
+01:04:33,039 --> 01:04:39,280
+Um so here this is actually doing something different. This is the normalizing constant um I think over the
+
+781
+01:04:39,280 --> 01:04:45,679
+batch. Um but you know we're doing essentially similar kinds of baselining as GRPO and we've got a slightly
+
+782
+01:04:45,679 --> 01:04:51,440
+different like square of the the log loss regularization to keep my policy close rather than doing clipping. Right?
+
+783
+01:04:51,440 --> 01:04:55,679
+So zooming out, what what's happening here? Very similar to GRPO in that this
+
+784
+01:04:55,679 --> 01:05:01,199
+first part is a baseline loss, but there's no standard deviation thing happening. This second part is analogous
+
+785
+01:05:01,199 --> 01:05:06,400
+to the clipping that happens in GRPO, but instead of doing clipping, we're explicitly regularizing the policy,
+
+786
+01:05:06,400 --> 01:05:10,239
+right? So we've got the same ingredients just in slightly different form. Um, and
+
+787
+01:05:10,239 --> 01:05:13,199
+so hopefully you can see, you know, that as long as you kind of have this policy
+
+788
+01:05:13,199 --> 01:05:18,719
+gradient thing and the right baselining and something that looks like regularization, you can get a working RL
+
+789
+01:05:18,719 --> 01:05:24,960
+algorithm. The other thing that the Kimmy folks do, and in some ways I think this is um more
+
+790
+01:05:24,960 --> 01:05:28,559
+forward-looking or or they got this more right than the R1 folks, which is that
+
+791
+01:05:28,559 --> 01:05:34,318
+they realize that, you know, if you're shipping a reasoning model, what you really care about is inference cost. And
+
+792
+01:05:34,318 --> 01:05:39,280
+if you care about inference cost, you had better try to control the length of
+
+793
+01:05:39,280 --> 01:05:42,798
+your uh coots, right? If you have really long thinking chains, that's going to
+
+794
+01:05:42,798 --> 01:05:47,199
+cost you a ton of money or cost your users a ton of money. And so instead of
+
+795
+01:05:47,199 --> 01:05:51,920
+celebrating the really long coots, the Kimmy folks say, uh, we want to really
+
+796
+01:05:51,920 --> 01:05:59,358
+compress the coots as much as possible while keeping performance high. Um, and so they have this length reward thing
+
+797
+01:05:59,358 --> 01:06:03,280
+here. Um, where what they're doing is for kind of each batch, um, they're
+
+798
+01:06:03,280 --> 01:06:08,079
+looking at the maximum and the minimum lengths. And what you have is lambda
+
+799
+01:06:08,079 --> 01:06:11,440
+where lambda is roughly like, you know, where are you in the range of lengths
+
+800
+01:06:11,440 --> 01:06:18,960
+within your batch, right? So if you're at plus.5 um you know you're really short and
+
+801
+01:06:18,960 --> 01:06:23,679
+negative.5 uh you are really long right um and the reward is basically going to
+
+802
+01:06:23,679 --> 01:06:26,960
+be lambda whenever you get the answer to be correct. So if your answer is correct
+
+803
+01:06:26,960 --> 01:06:31,760
+you're going to incentivize yourself to be really short at the very shortest end
+
+804
+01:06:31,760 --> 01:06:38,159
+of this range. Whereas if your answers are incorrect, you're in this bottom part of this length reward, which means
+
+805
+01:06:38,159 --> 01:06:45,039
+that you're incentivizing the uh coot lengths to be roughly shorter than the center of the range of the rollouts.
+
+806
+01:06:45,039 --> 01:06:48,480
+This is a somewhat funky loss to me to be honest, but you can kind of
+
+807
+01:06:48,480 --> 01:06:54,480
+understand the dynamics of this loss, which is you're incentivizing um sort of correct answers to be as short as
+
+808
+01:06:54,480 --> 01:07:00,880
+possible and incorrect answers are incentivized to be kind of averageish, right? Um, and so you don't have as
+
+809
+01:07:00,880 --> 01:07:06,960
+strong of an optimization pressure to to push down incorrect answers uh to be
+
+810
+01:07:06,960 --> 01:07:12,960
+short. And one final note on this length stuff is the Kimmy folks realize that if
+
+811
+01:07:12,960 --> 01:07:17,039
+you add this re uh reward early on in training, it stalls RL because, you
+
+812
+01:07:17,039 --> 01:07:20,480
+know, it basically forces the model to say I'm in a local minimum. I don't get
+
+813
+01:07:20,480 --> 01:07:23,679
+any of my answers correct. The best I can do is to have my coots really short
+
+814
+01:07:23,679 --> 01:07:27,039
+and then you just can't get out of that sort of local minimum. And so they
+
+815
+01:07:27,039 --> 01:07:30,400
+actually only turn this on later on uh during training. So they kind of
+
+816
+01:07:30,400 --> 01:07:35,039
+initially do a bit of unconstrained RL and then they add this length reward in
+
+817
+01:07:35,039 --> 01:07:41,199
+um afterwards. Um and they also have additional cool details. Who knows how much of this
+
+818
+01:07:41,199 --> 01:07:46,639
+stuff is necessary or important, but they actually have a whole curriculum set up. They basically have assigned
+
+819
+01:07:46,639 --> 01:07:50,639
+difficulty labels. So the data set uh just kind of like top down like they
+
+820
+01:07:50,639 --> 01:07:54,559
+just manually uh or via LMS kind of annotate uh the difficulty labels. Um,
+
+821
+01:07:54,559 --> 01:07:58,639
+and then they go from easy to hard in that order. And then they also as
+
+822
+01:07:58,639 --> 01:08:04,239
+they're uh going on sample problems proportional to one minus success rate. So if you're 100% succeeding, you just
+
+823
+01:08:04,239 --> 01:08:11,440
+never sample that question uh ever again. Um, and for the rewards, they basically um for code they take problems
+
+824
+01:08:11,440 --> 01:08:16,319
+with ground truth solutions and they generate a bunch of test cases. Um and
+
+825
+01:08:16,319 --> 01:08:21,039
+for math they uh basically use actually a reward model um where that's used to
+
+826
+01:08:21,039 --> 01:08:25,279
+compare like ground truth human written answers to the LM output. So instead of
+
+827
+01:08:25,279 --> 01:08:28,640
+using something like a reg x or using um simply which is what other people have
+
+828
+01:08:28,640 --> 01:08:34,880
+done the Kimmy folks actually use a model to do equivalence checking. It's kind of surprising to do this in a
+
+829
+01:08:34,880 --> 01:08:38,238
+verifiable reward case but you know they don't seem to have a problem. the reward
+
+830
+01:08:38,238 --> 01:08:42,399
+models are very very accurate um because it's really all it's doing is advanced
+
+831
+01:08:42,399 --> 01:08:49,679
+string matching. Um one of the things uh that's really cool about the Kimmy paper um is that
+
+832
+01:08:49,679 --> 01:08:55,119
+they also talk about kind of the infra issues that arise uh doing RL I think I
+
+833
+01:08:55,119 --> 01:08:59,198
+don't think I've seen any of the other um RL reasoning papers actually talk
+
+834
+01:08:59,198 --> 01:09:02,479
+about systems almost at all. So, it's nice to see that they're kind of talking
+
+835
+01:09:02,479 --> 01:09:08,399
+about this, what their structure is, what their their uh layout of this is.
+
+836
+01:09:08,399 --> 01:09:12,399
+Um, you'll have to deal with this in A5, like I think a very mini version of this
+
+837
+01:09:12,399 --> 01:09:17,119
+as you implement um things like rollouts in RL. But one thing I'll note, right,
+
+838
+01:09:17,119 --> 01:09:21,838
+is you know, why is RL so hard to make efficient? And in many ways, it's harder
+
+839
+01:09:21,838 --> 01:09:26,399
+than normal pre-training to to have your GPUs like fully utilized during RL. Um,
+
+840
+01:09:26,399 --> 01:09:32,079
+and the reason I think is because there's rollouts involved, right? So you have to be generating sequences and
+
+841
+01:09:32,079 --> 01:09:36,798
+whenever you're generating sequences not only are you kind of you know slow in
+
+842
+01:09:36,798 --> 01:09:42,238
+the sense of inference is slow but also you have this other issue which is that
+
+843
+01:09:42,238 --> 01:09:45,600
+um you have to switch from RL to inference and back and you have to be
+
+844
+01:09:45,600 --> 01:09:49,920
+passing sort of data back to the RL worker and the RL worker has to pass
+
+845
+01:09:49,920 --> 01:09:53,600
+model weights to the inference server and vice versa. So you've got all this
+
+846
+01:09:53,600 --> 01:09:58,319
+sort of message passing um that can happen. And finally um this is unique to
+
+847
+01:09:58,319 --> 01:10:03,119
+long coot models, but if you have really long coots, batches can become very very
+
+848
+01:10:03,119 --> 01:10:09,760
+uneven. So you have to to handle that cleverly um somehow. And so um the Kimmy
+
+849
+01:10:09,760 --> 01:10:16,158
+folks do this, you know, relatively nice but fairly standard thing of having different workers that are assigned to
+
+850
+01:10:16,158 --> 01:10:22,319
+do the RL updates, having different workers assigned to do inference. Um and they have basically kind of message
+
+851
+01:10:22,319 --> 01:10:25,600
+passing to be able to pass the weights to the inference worker and the
+
+852
+01:10:25,600 --> 01:10:30,880
+inference worker can basically make data sets for the RL worker. Um and you know
+
+853
+01:10:30,880 --> 01:10:35,760
+they have almost the same kinds of setups that you will have. Um they use
+
+854
+01:10:35,760 --> 01:10:39,920
+VLM for inference. Um and they also do very you know advanced stuff where they
+
+855
+01:10:39,920 --> 01:10:43,359
+have to have VLM with dummy weights and they have to kill it because of the the
+
+856
+01:10:43,359 --> 01:10:48,399
+complexities of doing kind of this passing of weights from one worker um to
+
+857
+01:10:48,399 --> 01:10:56,079
+another. Um, finally, I think one thing that I think is is interesting um that the
+
+858
+01:10:56,079 --> 01:10:59,760
+Kimmy people show in in their results is they they have like per iteration
+
+859
+01:10:59,760 --> 01:11:05,520
+results where they show like as RL proceeds like how does you know performance scale and they show really
+
+860
+01:11:05,520 --> 01:11:09,439
+nice scaling which is in the blue and they also show the growth of the length
+
+861
+01:11:09,439 --> 01:11:13,760
+of the responses and much like in Dr. GRPO because I don't think their their
+
+862
+01:11:13,760 --> 01:11:21,600
+RL algorithm is inherently sort of balanced or sorry biased towards longer responses. Most of the um uh sort of
+
+863
+01:11:21,600 --> 01:11:25,520
+responses actually sort of plateau out at a sort of target length like we saw
+
+864
+01:11:25,520 --> 01:11:33,679
+with Dr. GRPO rather than grow unboundedly like we did with uh the vanilla grpo.
+
+865
+01:11:33,679 --> 01:11:38,439
+Cool. Um any questions on on Kimmy before we finally conclude with uh Quen
+
+866
+01:11:38,439 --> 01:11:46,800
+3? So back to like the RL setup in detail
+
+867
+01:11:46,800 --> 01:11:51,920
+of Kimmy. Um yeah I was wondering like so I guess like when you're like doing
+
+868
+01:11:51,920 --> 01:11:56,960
+the robots during like training like the robots the inference is done by the app
+
+869
+01:11:56,960 --> 01:12:00,800
+right? Yes. And as I update the parameter that will mean that like you
+
+870
+01:12:00,800 --> 01:12:06,880
+know as they update the model they also need to sync that to the um to the VM
+
+871
+01:12:06,880 --> 01:12:11,679
+inference through worker and that's what this is for. Yeah. So I think you know
+
+872
+01:12:11,679 --> 01:12:17,840
+the most annoying part at least with current um libraries of this process is
+
+873
+01:12:17,840 --> 01:12:24,800
+essentially that step of taking RL weights and putting it into VL1. Uh there is an experimental API that is
+
+874
+01:12:24,800 --> 01:12:31,198
+supposed to allow you to use uh NCCL collective calls to uh shove a set of
+
+875
+01:12:31,198 --> 01:12:34,399
+weights into VLM. Um but at least we were thinking about having you use that
+
+876
+01:12:34,399 --> 01:12:39,679
+for the assignment actually. Uh but it has too many undocumented parameters for it to be a little bit mature. Um and so
+
+877
+01:12:39,679 --> 01:12:45,439
+maybe next year's iteration this will actually be you know fairly mature technology. But right now I think a lot
+
+878
+01:12:45,439 --> 01:12:49,679
+of people do things like start a VLM with dummy weights. The weights then get
+
+879
+01:12:49,679 --> 01:12:56,960
+loaded somehow into memory with sort of hacks on top of VL1. And each iteration they often tear down
+
+880
+01:12:56,960 --> 01:13:03,119
+VLM to make sure they can free the GPU memory fully. Yeah, there there's a lot of like I
+
+881
+01:13:03,119 --> 01:13:06,880
+think you know the RL for LMS I think is fairly new still. So I think the
+
+882
+01:13:06,880 --> 01:13:10,479
+infrastructural support remains a little bit immature but I think in maybe a year
+
+883
+01:13:10,479 --> 01:13:17,920
+things will actually just get much nicer. Yeah, question back there. You have a lot of like accuracy rewards and
+
+884
+01:13:17,920 --> 01:13:25,600
+like rewards rewards. How are you supposed to combine them together? Yeah. Um so you how do you combine the
+
+885
+01:13:25,600 --> 01:13:30,079
+different rewards? Um I think this is one of the RL not quite black magic but
+
+886
+01:13:30,079 --> 01:13:34,000
+really you know like RL magic things of like you just tune weights like in all
+
+887
+01:13:34,000 --> 01:13:37,679
+cases um all the rewards are just added together but with weights and how are
+
+888
+01:13:37,679 --> 01:13:42,800
+the weights determined empirically in order to maximize the downstream performance right um especially for
+
+889
+01:13:42,800 --> 01:13:46,399
+things like format rewards you can almost think of them as like shaping or
+
+890
+01:13:46,399 --> 01:13:52,158
+like surrogate rewards like you don't necessarily really care about the formatting reward it's more of a means
+
+891
+01:13:52,158 --> 01:13:56,679
+to an end to get a good long coot within the tags that will get you the answer
+
+892
+01:13:56,679 --> 01:14:04,000
+Cool. Okay, so the final uh one I want to talk about is Quen 3. And thankfully uh Quen
+
+893
+01:14:04,000 --> 01:14:07,840
+3 released their report before the end of the class, so I get to include it.
+
+894
+01:14:07,840 --> 01:14:14,158
+Um, and you know, I think this is the most recent and modern of the um, RL uh,
+
+895
+01:14:14,158 --> 01:14:18,238
+for reasoning kind of models to have come out. And so we can kind of see how
+
+896
+01:14:18,238 --> 01:14:23,039
+they've like built upon the previous works like where they've changed things. Um, and they have actually pretty
+
+897
+01:14:23,039 --> 01:14:30,800
+interesting scaling and data results that are are are new and unique. Um, so the overall picture is very
+
+898
+01:14:30,800 --> 01:14:35,520
+similar to what um, R1 and Kimmy have done, right? So Quinn basically take
+
+899
+01:14:35,520 --> 01:14:39,039
+their base models. um they'll do a long coot sft stage. So that's this first
+
+900
+01:14:39,039 --> 01:14:44,238
+stage over here. They'll do their reasoning RL. Um they'll do something funky that I'll I'll talk about later
+
+901
+01:14:44,238 --> 01:14:48,238
+called thinking mode fusion. Um and then they'll do um RLHF RL and then that's
+
+902
+01:14:48,238 --> 01:14:51,679
+the model that they ship. Of course they then distill that in various ways,
+
+903
+01:14:51,679 --> 01:14:55,439
+but we can kind of forget about that um for the moment, right? Um so we've
+
+904
+01:14:55,439 --> 01:15:02,560
+already seen this in R1, right? RLHF comes after reasoning um and then distillation comes yet after uh that.
+
+905
+01:15:02,560 --> 01:15:06,479
+And we already know a lot of the playbook. So I can actually go through
+
+906
+01:15:06,479 --> 01:15:11,760
+this fairly fast. Um much like Kimmy, they basically curate the data by filtering for difficulty using best of
+
+907
+01:15:11,760 --> 01:15:16,158
+end. So if your base model that hasn't been RL can already answer it, if you
+
+908
+01:15:16,158 --> 01:15:20,640
+sample like end times, then you can just get rid of it, right? Um you they also
+
+909
+01:15:20,640 --> 01:15:27,600
+do some like decontamination things where they remove things that are too similar to validation data. Um and then
+
+910
+01:15:27,600 --> 01:15:32,238
+they also manually filter um essentially their SFT set. So like for their initial
+
+911
+01:15:32,238 --> 01:15:35,039
+SFT data uh for long coots they like manually filter it for whether they are
+
+912
+01:15:35,039 --> 01:15:38,880
+guessing or whether they actually got it right. Um the one thing that empirically
+
+913
+01:15:38,880 --> 01:15:45,600
+I think is really interesting about the Quen 3 uh RL results is that they are
+
+914
+01:15:45,600 --> 01:15:50,238
+actually doing this RL only on 3,995 examples um you know which is a very
+
+915
+01:15:50,238 --> 01:15:54,800
+small number of examples to be doing this on um and they get pretty good
+
+916
+01:15:54,800 --> 01:15:59,359
+gains out of the RL process. And so you can view this as you know um RL on
+
+917
+01:15:59,359 --> 01:16:05,359
+verified rewards as being very efficient. You could also think of this as being um analogous to many sample
+
+918
+01:16:05,359 --> 01:16:11,600
+efficiency results in the past like people have shown that you can uh instruction tune a model with very few
+
+919
+01:16:11,600 --> 01:16:15,279
+samples or that you can distill a long coot with very few samples but that
+
+920
+01:16:15,279 --> 01:16:21,119
+doesn't necessarily mean that it doesn't continue to scale right we don't really know why. What this does show is that
+
+921
+01:16:21,119 --> 01:16:28,719
+even with very few examples, you can sometimes do RL which is surprising and
+
+922
+01:16:28,719 --> 01:16:33,600
+cool. Um so what is the two new uh sort of quen specific stuff that they do? um
+
+923
+01:16:33,600 --> 01:16:37,600
+the the thing that they do is uh this thing called thinking mode fusion which
+
+924
+01:16:37,600 --> 01:16:41,760
+I think is kind of interesting and where I think the the field or the the various
+
+925
+01:16:41,760 --> 01:16:46,399
+trends are going is in controlling inference right so what they do is they
+
+926
+01:16:46,399 --> 01:16:50,238
+want to have both a thinking model and a non-thinking model in the same you know
+
+927
+01:16:50,238 --> 01:16:54,960
+single set of parameters so what do they do well you know after they train a
+
+928
+01:16:54,960 --> 01:16:58,960
+model with RL um they have a model that can do thinking and now they're going to
+
+929
+01:16:58,960 --> 01:17:01,920
+fine-tune it again to do one of two things they're going to fine-tune the
+
+930
+01:17:01,920 --> 01:17:05,198
+model with some data that has a think tag and then it's going to do the normal
+
+931
+01:17:05,198 --> 01:17:09,439
+coot thing and you can get this data from yourself right like the original
+
+932
+01:17:09,439 --> 01:17:12,880
+thinking model can generate this um or you can have a no think tag in which
+
+933
+01:17:12,880 --> 01:17:17,198
+case it should immediately kind of emit an answer um and you know in this case
+
+934
+01:17:17,198 --> 01:17:20,640
+they they're going to have to sort of supervise fine-tune the model to know
+
+935
+01:17:20,640 --> 01:17:27,439
+what no think means and to immediately try to emit um the answer um and one
+
+936
+01:17:27,439 --> 01:17:31,279
+kind of interesting um side effect of this is that they found that if they do
+
+937
+01:17:31,279 --> 01:17:35,840
+this training where they train the model to to have a think and a no think tag.
+
+938
+01:17:35,840 --> 01:17:39,039
+Then what they can do is they can sort of if the model continues to think and
+
+939
+01:17:39,039 --> 01:17:44,560
+you want to terminate the thinking process, you can kind of actually like terminate the thinking process, add a
+
+940
+01:17:44,560 --> 01:17:48,399
+special string that's like considering the limited time of the user, I have to
+
+941
+01:17:48,399 --> 01:17:51,920
+give a solution by thinking directly now and then end think tag and then it sort
+
+942
+01:17:51,920 --> 01:17:56,560
+of accurately gives the answer. So this gives them a control knob by which they
+
+943
+01:17:56,560 --> 01:18:03,039
+can sort of more precisely control a maximum number of thinking tokens. Um
+
+944
+01:18:03,039 --> 01:18:07,039
+and this gives them pretty clean test time scaling from a single model. And so
+
+945
+01:18:07,039 --> 01:18:11,520
+they can set like a maximum thinking budget. Um and of course the sort of you
+
+946
+01:18:11,520 --> 01:18:15,198
+know very very maximum out to infinity is just the the original thinking model
+
+947
+01:18:15,198 --> 01:18:19,279
+but they can kind of early terminate to the left and they can get graceful
+
+948
+01:18:19,279 --> 01:18:22,319
+degradations uh in model performance. That's you know not too bad at the very
+
+949
+01:18:22,319 --> 01:18:28,479
+sort of beginning. You can like have the thinking tokens and still get some
+
+950
+01:18:28,479 --> 01:18:33,279
+pretty good uh performance. And so you know you can look at um Quen
+
+951
+01:18:33,279 --> 01:18:37,198
+3 also does a nice ablation where they give you the performance at the
+
+952
+01:18:37,198 --> 01:18:42,560
+reasoning RL stage at the thinking mode fusion stage and at the general RL
+
+953
+01:18:42,560 --> 01:18:46,640
+stage. Um and one thing that's very interesting to me here is that if you
+
+954
+01:18:46,640 --> 01:18:50,800
+look at the first two sets of rows the general task and the instruction
+
+955
+01:18:50,800 --> 01:18:56,560
+following ones um reasoning RL helps thinking mode fusion helps and of course RLHF continues to help here as well
+
+956
+01:18:56,560 --> 01:19:01,920
+right like kind of everything helps um in this regime but if you look at kind
+
+957
+01:19:01,920 --> 01:19:06,479
+of math or stem performance you know in the thinking case general RL hurts
+
+958
+01:19:06,479 --> 01:19:13,600
+performance and in the non-thinking case it helps performance so there really is seems to be at least somewhat of a
+
+959
+01:19:13,600 --> 01:19:19,760
+trade-off in, you know, do I optimize for general purpose instruction following up here or do I optimize for
+
+960
+01:19:19,760 --> 01:19:22,880
+like math encoding kind of down here, right? Um, and so those are kind of
+
+961
+01:19:22,880 --> 01:19:27,359
+interesting sort of properties that are emerging and it'll be cool to see sort
+
+962
+01:19:27,359 --> 01:19:35,760
+of uh more future models kind of sidestep these uh tradeoffs um somehow.
+
+963
+01:19:35,760 --> 01:19:41,119
+Okay, cool. So to put that all together um our our sort of initial motivation
+
+964
+01:19:41,119 --> 01:19:45,679
+was to say RL is very powerful. We kind of figured out that we can do RL with
+
+965
+01:19:45,679 --> 01:19:50,640
+language models in the RLHF domain. But you can't just like hill climb on noisy
+
+966
+01:19:50,640 --> 01:19:54,880
+pair wise preferences forever, right? Um so one solution is to pick domains in
+
+967
+01:19:54,880 --> 01:19:58,719
+which you can't do reward hacking and then just you know go for it, right? RL
+
+968
+01:19:58,719 --> 01:20:03,439
+and narrow domains is one good solution. Um and GRPO is one very simple algorithm
+
+969
+01:20:03,439 --> 01:20:07,279
+and hopefully you all kind of have a sense of like okay I can just do policy
+
+970
+01:20:07,279 --> 01:20:12,319
+gradients with some good baselines and that will enable uh RL on all of these
+
+971
+01:20:12,319 --> 01:20:17,279
+kinds of verifiable reward domains. Um and then finally um there's lots of successful recipes in the wild and you
+
+972
+01:20:17,279 --> 01:20:25,198
+hopefully now you've seen you know what's in common, what's different, what implementation tricks uh matter.
+
+973
+01:20:25,198 --> 01:20:29,000
+Cool. Thanks a lot. Um and I will see you all next week.
+

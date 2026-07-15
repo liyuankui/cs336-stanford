@@ -1,0 +1,28 @@
+figure_name	source_frame	video_start_sec	video_end_sec	time_range_hms	topic
+fig_01_lecture_overview	frame_0003.png	30	45	00:00:30--00:00:45	Lecture 15 标题与导览
+fig_02_base_vs_aligned	frame_0005.png	60	75	00:01:00--00:01:15	基础模型 vs 对齐模型 对比
+fig_03_why_alignment	frame_0012.png	165	180	00:02:45--00:03:00	为什么需要对齐（部署场景）
+fig_04_flan_collection	frame_0029.png	418	435	00:06:58--00:07:15	Flan 指令集合
+fig_05_flan_tasks	frame_0034.png	495	510	00:08:15--00:08:30	Flan 任务类型分布
+fig_06_open_assistant	frame_0040.png	580	600	00:09:40--00:10:00	Open Assistant 众包对话
+fig_07_alpaca_seed	frame_0043.png	630	645	00:10:30--00:10:45	Alpaca 由 175 条种子生成
+fig_08_sft_data_cost	frame_0048.png	705	725	00:11:45--00:12:05	SFT 数据获取成本曲线
+fig_09_length_bias	frame_0070.png	1024	1040	00:17:04--00:17:20	长度偏置：人类偏好长答案
+fig_10_hallucination_sft	frame_0081.png	1183	1200	00:19:43--00:20:00	SFT 教会模型幻觉
+fig_11_schulman_argument	frame_0089.png	1290	1310	00:21:30--00:21:50	Schulman 幻觉论证
+fig_12_safety_intro	frame_0100.png	1484	1500	00:24:44--00:25:00	安全微调简介
+fig_13_safety_overrefusal	frame_0105.png	1540	1560	00:25:40--00:26:00	安全 vs 过度拒绝权衡
+fig_14_safety_examples	frame_0108.png	1604	1620	00:26:44--00:27:00	500 条样本即可塑造行为
+fig_15_mid_training	frame_0121.png	1783	1800	00:29:43--00:30:00	Mid-training 概念
+fig_16_miniCPM_pipeline	frame_0129.png	1900	1920	00:31:40--00:32:00	miniCPM 两阶段训练流水线
+fig_17_rlhf_overview	frame_0172.png	2561	2580	00:42:41--00:43:00	RLHF 宏观流程
+fig_18_instructgpt_3step	frame_0186.png	2750	2770	00:45:50--00:46:10	InstructGPT 三步法（SFT/RM/PPO）
+fig_19_reward_model	frame_0191.png	2835	2855	00:47:15--00:47:35	奖励模型训练
+fig_20_helpful_truthful_harmless	frame_0195.png	2900	2920	00:48:20--00:48:40	有用、真实、无害三柱
+fig_21_rlhf_bias	frame_0223.png	3300	3320	00:55:00--00:55:20	RLHF 单独的对齐偏好
+fig_22_ai_feedback	frame_0233.png	3460	3480	00:57:40--00:58:00	AI 反馈（UltraFeedback）
+fig_23_tulu3	frame_0235.png	3508	3525	00:58:28--00:58:45	Tulu 3 训练配方
+fig_24_self_preference	frame_0254.png	3802	3810	01:03:22--01:03:30	模型自我偏好
+fig_25_bradley_terry	frame_0271.png	4049	4070	01:07:29--01:07:50	Bradley-Terry 偏好模型方程
+fig_26_dpo_idea	frame_0288.png	4310	4325	01:11:50--01:12:05	DPO 核心思想
+fig_27_dpo_objective	frame_0293.png	4354	4380	01:12:34--01:13:00	DPO 目标函数推导

@@ -1,0 +1,29 @@
+figure	frame	start	end	topic
+fig_01_outline	frame_0003	00:30	00:45	课程大纲：让 CUDA 和 GPU 不再神秘
+fig_02_dennard	frame_0020	04:45	05:00	Dennard 缩放与单线程性能停滞
+fig_03_parallel_scaling	frame_0024	05:45	06:00	Bill Dally：并行缩放的超级指数曲线
+fig_04_gpu_anatomy_sm	frame_0027	06:30	06:45	GPU 解剖：SM 与 SP、张量核
+fig_05_cpu_vs_gpu	frame_0034	08:15	08:30	CPU 延迟优先 vs GPU 吞吐优先
+fig_06_gpu_anatomy_mem	frame_0045	10:45	11:00	GA100 芯片布局与内存层次延迟
+fig_07_execution_model	frame_0056	13:45	14:00	执行模型：block、warp、thread
+fig_08_memory_model	frame_0062	15:15	15:30	逻辑内存模型：寄存器/共享/全局
+fig_09_matmul_hardware	frame_0085	21:00	21:15	矩阵乘硬件：TFLOPS 随代际爆炸
+fig_10_compute_vs_mem_scaling	frame_0089	22:15	22:30	算力增长远快于带宽增长
+fig_11_part2_mystery	frame_0101	25:00	25:15	Part 2：矩阵乘性能之谜
+fig_12_roofline	frame_0107	26:30	26:45	Roofline 模型：算术强度决定瓶颈
+fig_13_control_divergence	frame_0114	28:15	28:30	控制流分叉（warp divergence）
+fig_14_low_precision	frame_0121	29:45	30:00	技巧 1：低精度计算
+fig_15_operator_fusion_factory	frame_0135	33:30	33:45	技巧 2：算子融合（工厂类比）
+fig_16_fused_sincos	frame_0144	35:15	35:30	技巧 2：融合 sin/cos
+fig_17_recomputation_backprop	frame_0151	37:30	37:45	技巧 3：重计算（反向传播）
+fig_18_recomputation_sigmoid	frame_0157	38:45	39:00	技巧 3：重计算（sigmoid 示例）
+fig_19_memory_coalescing	frame_0168	41:30	41:45	技巧 4：内存合并与突发模式
+fig_20_tiling_intro	frame_0177	43:45	44:00	技巧 5：分块（tiling）引入
+fig_21_tiling_loop_reorder	frame_0189	46:45	47:00	技巧 5：循环重排（tiling）
+fig_22_tiling_analysis	frame_0201	49:45	50:00	技巧 5：分块的算子分析
+fig_23_wave_quant_257	frame_0217	53:45	54:00	波量化：257 处的台阶
+fig_24_matmul_mystery_explained	frame_0241	59:45	60:00	矩阵乘之谜的解释
+fig_25_wave_quant_1792	frame_0247	61:15	61:30	波量化：1792 的锯齿
+fig_26_flash_attention_intro	frame_0261	64:45	65:00	Flash Attention：亚平方 HBM 访问
+fig_27_flash_attention_hbm	frame_0272	67:30	67:45	Flash Attention：HBM 读写分析
+fig_28_online_softmax	frame_0275	68:15	68:30	Online softmax：流式最大值与校正

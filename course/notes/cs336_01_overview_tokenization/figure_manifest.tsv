@@ -1,0 +1,19 @@
+figure	frame	start	end	topic
+fig_01_crisis	frame_0011	00:02:15	00:02:45	研究者与技术脱节的危机：GPT-4o 查询演示 + "researchers are becoming disconnected from the underlying technology"
+fig_02_three_knowledges	frame_0030	00:07:00	00:07:30	三类知识：Mechanics（机制）/ Mindset（心态）/ Intuition（直觉）的迁移性讨论
+fig_03_bitter_lesson	frame_0039	00:09:15	00:09:45	Bitter Lesson 正确解读：引用 GLU/SwiGLU 论文说明算法在 scale 下才重要
+fig_04_efficiency_44x	frame_0047	00:11:15	00:11:45	算法效率提升：Hernandez 2020 显示 2012-2019 ImageNet 训练效率提升 44 倍
+fig_05_neural_ingredients	frame_0057	00:13:45	00:14:15	2010s 神经网络关键组件时间线：Bengio 2003 / Seq2Seq / Adam / Attention / Transformer
+fig_06_openness_levels	frame_0068	00:16:30	00:17:00	开放性的三个层级：Closed（GPT-4o）/ Open-weight（DeepSeek）/ Open-source（OLMo）
+fig_07_five_modules	frame_0110	00:27:00	00:27:30	五大模块设计决策总览：Basics / Systems / Scaling laws / Data / Alignment 的子任务矩阵
+fig_08_transformer_variants	frame_0121	00:29:45	00:30:15	Transformer 架构改进清单：原始架构图 + 变体（激活函数 ReLU→SwiGLU 等）
+fig_09_assignment1	frame_0131	00:32:15	00:32:45	Assignment 1 细节：GQA/MLA 注意力变体 + 训练超参 + "Implement BPE tokenizer"
+fig_10_gpu_arch	frame_0139	00:34:15	00:34:45	GPU 架构图：A100 GA100 Full GPU with 128 SMs 的结构图
+fig_11_inference_phases	frame_0155	00:38:15	00:38:45	Inference 两阶段：Prefill（compute-bound）vs Decode（memory-bound）
+fig_12_scaling_laws	frame_0169	00:41:45	00:42:15	Scaling laws / Chinchilla：给定 FLOPs 预算，大模型少数据 vs 小模型多数据的等损失曲线
+fig_13_data_pipeline	frame_0194	00:48:00	00:48:30	数据获取管线：Common Crawl 抓取代码 + sample-documents 检查，揭示网络数据"是一片荒原"
+fig_14_alignment	frame_0205	00:50:45	00:51:15	Alignment 目标：base model 是"raw potential"，需让模型 follow instructions / 控制风格 / 安全
+fig_15_efficiency_unify	frame_0226	00:56:00	00:56:30	效率作为统一视角：compute-constrained regime 下五大模块的协同设计
+fig_16_tokenizer_demo	frame_0248	01:01:30	01:02:00	Tiktokenizer 演示：gpt-4o tokenizer 对 "hello world, hello world" 的切分与 token count
+fig_17_bpe_algorithm	frame_0293	01:12:45	01:13:15	BPE 算法逐步演示：Philip Gage 1994 起源 + 从字节开始逐步合并最高频相邻对
+fig_18_bpe_summary	frame_0314	01:18:00	01:18:30	BPE 总结：strings↔tokens 映射，字符/字节/词级方案均不优，BPE 是"必要的妥协"

@@ -1,0 +1,26 @@
+figure	frame	start	end	topic
+fig_01_modern_variant	frame_0008	00:01:45	00:02:15	"What you implemented"：现代 Transformer 变体总览（pre-norm + RoPE + SwiGLU + 无 bias）
+fig_02_vanilla_vs_modern	frame_0010	00:02:15	00:02:45	原始 Transformer 与现代共识变体的对比（norm 位置、位置编码、激活、bias 的差异）
+fig_03_model_zoo	frame_0016	00:03:45	00:04:15	模型动物园电子表格：2017→2025 各模型架构超参数对比表（OLMo 2 / Llama 3 / Gemma 3 / Qwen2.5 等）
+fig_04_arch_variations	frame_0024	00:05:15	00:05:45	架构组件变迁表：norm 类型/位置、position embedding、activation 在各模型间"低共识"现状
+fig_05_layernorm_primer	frame_0034	00:08:15	00:08:45	Normalization layers primer：LayerNorm 公式（减均值除标准差再仿射变换 γ/β）
+fig_06_prenorm_vs_postnorm	frame_0044	00:10:45	00:11:15	PreNorm vs PostNorm：归一化放在残差块前还是后，残差通路是否被 norm 干扰
+fig_07_norm_placement	frame_0054	00:13:15	00:13:45	归一化位置对比图：post-norm（块后）与 pre-norm（块前）的架构并排
+fig_08_rmsnorm	frame_0104	00:25:45	00:26:15	RMSNorm：去掉均值减法、仅用 RMS 归一化且无 bias，参数更少、速度快、已成主流
+fig_09_activation_relu	frame_0080	00:19:45	00:20:15	激活函数：ReLU 的历史（源自 CNN）与曲线，及其在 Transformer 中的沿用
+fig_10_swiglu	frame_0090	00:22:15	00:22:45	SwiGLU/门控线性单元：FFN 用两路投影 + SiLU 门控 + 缩放因子，配 FFN ratio
+fig_11_rope_intro	frame_0136	00:33:45	00:34:15	Rotary Position Embedding 总览：通过旋转 query/key 向量编码相对位置
+fig_12_rope_rotation	frame_0146	00:36:15	00:36:45	RoPE 数学推导：旋转矩阵 R_m 作用于 q/k，内积仅依赖相对位置 (m−n)
+fig_13_ffn_ratio	frame_0170	00:42:15	00:42:45	FFN 内层维度 d_ff 选择：常见 4× 与 SwiGLU 下的 (8/3)×，各模型取值对比
+fig_14_ffn_multiplier_range	frame_0184	00:45:45	00:46:15	FFN 倍数取值范围（1–10）：50M 模型 loss vs FFN ratio 扫描，经验最优区间
+fig_15_aspect_ratio	frame_0208	00:51:45	00:52:15	深度 vs 宽度（aspect ratio）：深层难并行、延迟高，浅层易并行，trade-off 讨论
+fig_16_context_length	frame_0232	00:57:45	00:58:15	上下文长度选择：各模型 context window 大小与长上下文带来的训练/外推 trade-off
+fig_17_init_mup	frame_0264	01:05:45	01:06:15	初始化与 muP：Xavier/He 初始化 + maximal update parameterization 实现超参迁移
+fig_18_z_loss	frame_0280	01:09:45	01:10:15	Output softmax 稳定性：PaLM 的 z-loss 技巧，约束 softmax 归一化项 log(Z)≈0
+fig_19_kv_cache_slow	frame_0300	01:14:45	01:15:15	为何自回归生成慢：decode 阶段逐 token、memory-bound，引出 KV cache
+fig_20_arithmetic_intensity	frame_0322	01:20:15	01:20:45	Arithmetic intensity（FLOPs/byte）：prefill compute-bound vs decode memory-bound 的 roofline 分析
+fig_21_attention_variants	frame_0336	01:23:45	01:24:15	注意力变体：MHA / MQA / GQA / MLA，key/value head 如何在 query head 间共享
+fig_22_summary	frame_0348	01:26:45	01:27:00	课程总结：回顾本讲要点（架构组件 + 超参选择 + 推理效率）
+fig_23_design_questions	frame_0022	00:05:15	00:05:45	设计问题清单：训练 LM 需要决策的所有架构/超参选项一览
+fig_24_norm_debate	frame_0048	00:11:45	00:12:15	归一化位置争论：post-norm 早期更好但需 warmup，pre-norm 更稳定，后来反转
+fig_25_kv_cache_memory	frame_0325	01:20:45	01:21:15	KV cache 内存开销：随序列长度线性增长，长上下文推理的主要瓶颈

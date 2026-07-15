@@ -1,0 +1,26 @@
+figure	frame	start	end	topic
+fig_complexity_rates	frame_0017	00:04:00	00:04:30	统计学习理论的 generalization bound：有限假设集下的 excess risk 以 O(1/√m) 衰减，理论版的 scaling law
+fig_bell_labs_1993	frame_0023	00:05:15	00:05:45	最早的 scaling law 论文：Bell Labs 1993 NeurIPS（Vapnik/Cortes 等），预测模型性能无需完整训练，函数形式 test error = 不可约误差 + 多项式衰减项
+fig_banko_brill	frame_0029	00:07:00	00:07:30	Banko & Brill 2001：NLP 系统性能随数据量幂律提升，log 轴数据 vs 性能曲线，讨论算法 vs 数据收集的取舍
+fig_hestness_regions	frame_0035	00:08:15	00:08:45	Hestness 2017：模型行为三区域——随机猜测区 / 幂律缩放区 / 不可约误差渐近区；MT 0.13、speech 0.3、LM 0.95 的指数
+fig_kaplan_scaling_vars	frame_0051	00:12:30	00:13:00	Kaplan 2020：compute / dataset size / parameters 三个变量上 loss 都呈幂律；强调单变量缩放时另一变量需远大于饱和点
+fig_mean_estimation_powerlaw	frame_0061	00:14:45	00:15:15	均值估计是最简单的 scaling law 例子：高斯样本均值估计误差 σ²/n，log-log 下斜率 -1，多项式衰减天然成立
+fig_empirical_exponents	frame_0071	00:17:15	00:17:45	实测衰减指数远慢于理论 1/n 或 1/√n：MT 0.13 / speech 0.3 / LM 0.95，说明实际任务比简单函数拟合慢得多
+fig_intrinsic_dimension	frame_0087	00:21:15	00:21:45	非参数回归 box-counting 论证：d 维下误差 ~ n^(-1/d)，斜率反映数据内在维度；慢指数与内在维度相关
+fig_lstm_vs_transformer	frame_0111	00:27:15	00:27:45	架构 scaling：Transformer vs LSTM 跨多个 compute 阈值对比，LSTM 有约 15× 的常数 compute 惩罚
+fig_optimizer_sgd_adam	frame_0121	00:29:45	00:30:15	优化器选择 scaling（Hestness）：SGD vs Adam 在 dataset size 上呈常数效率差距，Adam 更优
+fig_aspect_ratio	frame_0125	00:30:45	00:31:15	Kaplan 深度 vs 宽度（aspect ratio）分析：50M/270M/1.5B 不同规模下曲线形状相似，宽盆地在 10-100 间近似最优
+fig_non_embedding_params	frame_0129	00:31:45	00:32:15	关键细节：嵌入参数与 non-embedding 参数行为不同；只算 non-embedding 参数才能得到干净幂律
+fig_hyperparam_slices	frame_0135	00:33:15	00:33:45	scale-aware 超参选择：FFN dim ratio / attention head dim 在不同 compute 切片下最小值保持相似，小模型结论可迁移
+fig_batch_noise_scale	frame_0143	00:35:15	00:35:45	batch size 与 noise scale：小于 noise scale 时增 batch 等价于多走梯度步；超过后边际递减
+fig_critical_batch_size	frame_0151	00:37:15	00:37:45	critical batch size：loss target 越小（越好）critical batch size 越大；Llama 3 训练中会随训练增大 batch
+fig_learning_rate_scaling	frame_0159	00:39:15	00:39:45	学习率 scaling：标准做法下最优 LR 随宽度衰减（约 1/width）；可用 scaling law 拟合最优 LR 曲线
+fig_downstream_vs_perplexity	frame_0177	00:43:45	00:44:15	警告：perplexity scaling 很干净（只取决于总 compute），但下游任务（如 SuperGLUE）scaling 远不可预测，架构差异显现
+fig_rosenfeld_joint	frame_0193	00:47:45	00:48:15	Rosenfeld 联合 data-model scaling：loss = α + β/N^p + γ/D^q，3D 曲面拟合数据点几乎完美，小规模外推大规模精度高
+fig_kaplan_joint_compute	frame_0205	00:50:45	00:51:15	Kaplan 联合 compute-data scaling：参数为 x 轴、颜色代表 compute，隐含 data 维度变化；为 Chinchilla 奠定基础
+fig_cosine_lr_issue	frame_0213	00:52:45	00:53:15	Kaplan 低估数据需求的原因之一：cosine LR schedule 不能截断，中途截断不等于从头训到中段，导致估计偏差
+fig_chinchilla_method1	frame_0221	00:54:45	00:55:15	Chinchilla Method 1（minimum envelope）：取所有训练曲线下包络，提取每个 compute 预算下的最优 (N, D)，得 exponent ≈ 0.5
+fig_chinchilla_isoflop	frame_0229	00:56:45	00:57:15	Chinchilla Method 2（IsoFLOP 曲线）：固定每个 compute 水平扫模型大小，取每条曲线最低点（或二次拟合最小值），得 N* ≈ 63-67B
+fig_chinchilla_method3	frame_0237	00:58:45	00:59:15	Chinchilla Method 3（参数化拟合）：直接拟合 Rosenfeld 形式到所有 (N, D) 点，原拟合残差非零均值导致偏差；Epoch AI 复现修正后与 Method 1/2 一致
+fig_tokens_per_param_evolution	frame_0249	01:01:45	01:02:15	tokens/parameter 比随时间增长：GPT-3 约 2 → Chinchilla 20 → 现代（Llama/Qwen）远超 20，因推理成本主导，倾向 over-train 小模型
+fig_summary	frame_0261	01:04:45	01:05:15	总结：log-log 线性关系扩展到模型参数与总 compute；支撑超参决策与 compute-data 资源权衡；IsoFLOP 分析的干净程度令人惊讶

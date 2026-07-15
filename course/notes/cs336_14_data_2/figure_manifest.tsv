@@ -1,0 +1,30 @@
+figure	frame	start	end	topic
+01_title	frame_0001	00:00	00:30	标题页 / 课程导引
+02_filtering_primitive	frame_0007	01:30	02:10	过滤原语：目标数据 vs 原始数据
+03_ngram_kenlm	frame_0011	02:30	03:30	N-gram 语言模型与 KenLM/Kneser-Ney 平滑
+04_kenlm_demo	frame_0025	05:50	06:50	KenLM perplexity 演示（Wikipedia 句子）
+05_ccnet	frame_0032	07:45	08:15	CCNet：按 perplexity 排序保留 top 1/3（首版 Llama 数据）
+06_fasttext_arch	frame_0039	09:30	10:30	FastText：词袋线性分类 + 维度压缩
+07_fasttext_hashing	frame_0047	11:30	12:30	FastText：n-gram 哈希技巧（hashing trick）
+08_importance_resample	frame_0057	14:00	15:40	重要性重采样（importance resampling）原理
+09_dsir_hashing	frame_0071	17:40	18:30	DSIR：hash n-gram 估计目标分布
+10_filtering_summary	frame_0079	19:30	20:30	三种过滤方法统一框架小结
+11_langid	frame_0097	24:00	25:00	语言识别（FastText langid off-the-shelf）
+12_openwebmath	frame_0117	29:00	30:20	OpenWebMath 案例：规则+KenLM+FastText 多级过滤
+13_quality_filter	frame_0125	31:00	32:30	质量过滤：GPT-3 / Llama / Phi-1 三种思路
+14_phi1	frame_0135	33:30	34:20	Phi-1：用 GPT-4 标注 + 随机森林蒸馏分类器
+15_toxicity_jigsaw	frame_0145	36:00	37:00	毒性过滤：Jigsaw 数据集 + FastText 二分类
+16_dedup_intro	frame_0149	37:00	38:00	去重引言：精确 vs 近似重复
+17_near_dup_examples	frame_0157	39:00	40:00	近似重复示例：MIT 许可证、模板生成、改写
+18_c4_61k	frame_0163	40:30	41:00	C4 中 6.1 万次重复的极端案例
+19_dedup_benefits	frame_0166	41:15	42:00	去重收益：训练效率 + 避免记忆
+20_dedup_design	frame_0170	42:15	43:00	去重设计空间：单元 / 匹配方式 / 动作
+21_hash_functions	frame_0177	44:00	44:30	哈希函数回顾：murmurhash 等
+22_exact_dedup	frame_0185	46:00	46:30	精确去重：hash → 分组 → 保留一份
+23_bloom_build	frame_0193	48:00	49:30	Bloom Filter 构建与查询示例
+24_bloom_math	frame_0217	54:00	57:00	Bloom Filter 误报率分析：单/多 hash 函数
+25_jaccard	frame_0237	59:00	59:40	Jaccard 相似度定义与示例
+26_minhash	frame_0249	62:00	64:00	MinHash：碰撞概率 = Jaccard 相似度
+27_lsh_bands	frame_0265	66:00	67:30	Locality Sensitive Hashing：b 个 band × r 个 hash
+28_lsh_sigmoid	frame_0285	71:00	73:00	LSH S 曲线：调 B/R 改变阈值锐度
+29_summary	frame_0313	78:00	79:05	本讲总结：过滤 + 去重的算法工具箱

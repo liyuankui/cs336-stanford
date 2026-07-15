@@ -1,0 +1,26 @@
+figure	timestamp	caption
+fig_01_intro.jpg	01:00	数据是构建语言模型最关键的要素
+fig_02_ai2_mix.jpg	03:30	AI2 OLMo 典型预训练数据混合（3.9T tokens）
+fig_03_bert.jpg	06:45	BERT 训练于 Books Corpus 与 Wikipedia
+fig_04_wikipedia.jpg	08:00	Wikipedia 的性质：可引用、可编辑、定期 dump
+fig_05_poisoning.jpg	10:15	数据投毒：在 dump 前注入恶意编辑
+fig_06_commoncrawl.jpg	13:30	Common Crawl：互联网的学术近似
+fig_07_cc_stats.jpg	14:30	Common Crawl 规模：27 亿页面/月级快照
+fig_08_crawl_arch.jpg	15:30	爬虫架构：seed URL、爬取前沿、BFS
+fig_09_warc_wet.jpg	16:30	WARC（原始 HTTP）与 WET（提取文本）格式
+fig_10_robots.jpg	18:30	robots.txt：网站对爬虫的策略声明
+fig_11_ccnet.jpg	23:00	CCNet：以 Wikipedia 五元模型做质量过滤
+fig_12_c4.jpg	24:15	C4：纯启发式规则清洗 Common Crawl
+fig_13_gpt3.jpg	28:00	GPT-3：质量分类器筛选高质量网页
+fig_14_pile.jpg	30:00	The Pile：EleutherAI 的 22 个高质量领域
+fig_15_stackexchange.jpg	36:00	Stack Exchange：天然的问答对格式
+fig_16_github.jpg	38:00	GitHub：2800 万公开仓库的代码来源
+fig_17_massivetext.jpg	42:00	MassiveText/Gopher：手工规则质量过滤
+fig_18_llama.jpg	45:30	LLaMA：引用 Wikipedia 的页面分类器
+fig_19_fineweb.jpg	47:30	RefinedWeb/FineWeb：仅靠优质网页数据
+fig_20_dolma.jpg	49:45	DOLMA：AI2 OLMo 的多源数据组合
+fig_21_datacomp.jpg	52:00	DataComp/DCLM：240T 池子筛选至 3.8T
+fig_22_nemotron.jpg	56:00	Nemotron-CC：教育价值评分 + 改写扩增
+fig_23_copyright.jpg	62:30	版权与合理使用四要素
+fig_24_fairuse.jpg	68:00	训练作为转化性使用的法律争论
+fig_25_summary.jpg	77:00	总结：数据不会从天而降

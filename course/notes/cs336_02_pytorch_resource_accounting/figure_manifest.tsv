@@ -1,0 +1,24 @@
+figure	frame	start	end	topic
+fig_01_napkin_math	frame_0012	02:45	03:15	Napkin math 动机：训练 70B 模型需要多久 / 8 张 H100 能训多大模型
+fig_02_fp32_bits	frame_0028	06:45	07:15	FP32 位结构：1 sign + 8 exponent + 23 fraction = 32 bits
+fig_03_fp16_bf16_compare	frame_0034	08:15	08:45	FP16 vs BF16 对比：FP16(1+5+10) 动态范围小，BF16(1+8+7) 与 FP32 同动态范围
+fig_04_bf16_layout	frame_0036	08:45	09:15	BF16 brain float：保留 FP32 的 8 位 exponent，舍弃 fraction，专为深度学习设计
+fig_05_tensor_memory	frame_0041	10:00	10:30	Tensor 内存计算：memory = num_elements × bytes_per_element（4×8 float32 = 128 bytes）
+fig_06_mixed_precision	frame_0044	10:45	11:15	混合精度训练：BF16 做前向/反向计算，FP32 保存 master weights 做更新
+fig_07_views_strides	frame_0084	20:45	21:15	Views 与 strides：reshape/view 不拷贝数据，仅改变逻辑形状与步幅
+fig_08_contiguous	frame_0088	21:45	22:15	Contiguous tensors：view() 需连续内存，reshape() 总是可用
+fig_09_autograd	frame_0064	15:45	16:15	Autograd 自动微分：requires_grad=True + backward() 自动计算梯度
+fig_10_computational_graph	frame_0092	22:45	23:15	计算图：leaf variables 与非叶子节点，autograd 追踪操作构建 DAG
+fig_11_nn_linear	frame_0108	26:45	27:15	nn.Linear 定义：weight 为 Parameter，forward 做 F.linear(x, weight)
+fig_12_mlp_module	frame_0124	30:45	31:15	MLP 的 nn.Module 实现：__init__ 定义层，forward 描述计算流程
+fig_13_training_loop	frame_0204	50:45	51:15	训练循环：forward → loss → zero_grad → backward → step
+fig_14_matmul_flops	frame_0098	24:15	24:45	矩阵乘法 FLOPs：C=AB (m×k)(k×n)，总 FLOPs = 2mnk
+fig_15_linear_flops	frame_0156	38:45	39:15	Linear layer FLOPs：前向 2dk，反向 4dk，单 token 共 6×参数量 FLOPs
+fig_16_attention_flops	frame_0220	54:45	55:15	Attention FLOPs：softmax(QK^T/√d)V，QKV 投影主导计算量
+fig_17_transformer_6nd	frame_0188	46:45	47:15	Transformer 训练总 FLOPs ≈ 6ND：前向 2 + 反向 4，推导 6×系数来源
+fig_18_activation_memory	frame_0212	52:45	53:15	激活内存：随层数线性增长，需缓存每层激活供反向传播
+fig_19_gradient_checkpointing	frame_0164	40:45	41:15	Gradient checkpointing：仅存 sqrt(n) 个检查点，用计算换内存（O(√n) vs O(n)）
+fig_20_optimizer_memory	frame_0228	56:45	57:15	优化器状态内存：AdamW 需存 m 和 v（各 4 bytes FP32），每参数约 12-16 bytes
+fig_21_training_time	frame_0180	44:45	45:15	训练时间估算：6×70B×15T / (1024×989e12×0.5×86400) ≈ 144 天
+fig_22_h100_tflops	frame_0148	36:45	37:15	H100 峰值算力：989 TFLOPS (BF16)，每天 86400 秒
+fig_23_optimizer_summary	frame_0244	60:45	61:15	优化器与内存总结：SGD/Adam/AdamW 的状态量对比与 weight decay 解耦

@@ -1,0 +1,27 @@
+figure	start	end	topic
+fig_01_rl_setup	00:03:00	RL 设置：状态=prompt+响应、动作=token、奖励=响应好坏
+fig_02_outcome_reward	00:04:45	结果奖励：思维链最后输出答案，提取并与 ground truth 比对
+fig_03_transition_dynamics	00:05:45	转移动力学：新状态=旧状态拼接 token；已知动力学→可规划/test-time compute
+fig_04_policy_objective	00:08:00	策略=语言模型；目标最大化期望奖励，遍历 prompt 与策略采样
+fig_05_pg_theorem	00:09:15	策略梯度定理：log-derivative trick 把期望梯度变成可采样估计
+fig_06_naive_pg_sft	00:11:00	朴素策略梯度=带 reward 加权的 SFT；0/1 reward 退化为只更新答对样本
+fig_07_sparse_reward	00:12:30	稀疏奖励陷阱：策略太差→全 r=0→梯度为零→卡死
+fig_08_two_state_variance	00:16:30	两状态玩具例子：易题次优 reward 9>难题最优 reward 2，朴素梯度被误导
+fig_09_baseline_idea	00:19:45	基线思想：减 B(s) 不改期望梯度但降方差，对任意不依赖 a 的 B 成立
+fig_10_baseline_variance	00:21:30	加基线后方差从 5.3 降到 1.1，次优动作 advantage 为负被推远
+fig_11_optimal_baseline	00:24:30	最优基线闭式解（含梯度模长权重）难算；启发式 B(s)≈E[r|s]
+fig_12_advantage	00:26:45	Value/Q/Advantage 定义：A(s,a)=Q-V，"比平均好多少"
+fig_13_general_delta	00:28:45	统一 delta 形式：reward/中心化/标准化对应不同算法
+fig_14_grpo_lineage	00:31:15	GRPO 谱系：PPO→DPO→GRPO；语言模型"一 prompt 多采样"提供天然分组
+fig_15_grpo_pseudocode	00:32:45	GRPO 伪代码全貌：rollout→reward→delta→logprob→loss→梯度步
+fig_16_sorting_task	00:34:30	玩具任务：排序 n 个数，笔记本可跑的极简模型
+fig_17_partial_credit	00:36:30	两种部分信用奖励：位置匹配 / inclusion+相邻有序（有漏洞）
+fig_18_model_arch	00:38:45	极简模型：每位置独立 encode/decode 矩阵，非自回归独立解码
+fig_19_forward_pass	00:40:15	前向与采样：embed→变换→logits→采样 G 条响应，维度流
+fig_20_compute_deltas	00:45:30	compute_deltas 菜单：原始/中心化/GRPO 标准化/只保留最大
+fig_21_log_probs	00:48:30	log-prob 计算：响应过模型→log-softmax→按 token gather
+fig_22_no_grad	00:51:00	no_grad 插曲：不冻结 old→比值恒为 1→梯度为零
+fig_23_grpo_loss	00:54:00	GRPO clipped loss：min(ratio·δ, clip(ratio)·δ) 加负号
+fig_24_kl_penalty	00:56:30	KL 惩罚：q/p-log(q/p)-1 是同期望低方差估计
+fig_25_full_algorithm	01:00:30	完整算法：外层 epoch+内层多步更新，推理昂贵故复用响应
+fig_26_big_picture	01:02:45	大局：三层时间尺度——采样/策略更新/参考模型更新

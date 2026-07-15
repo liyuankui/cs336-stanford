@@ -1,0 +1,8436 @@
+1
+00:00:05,120 --> 00:00:08,880
+So hopefully everyone's having a good
+
+2
+00:00:06,720 --> 00:00:10,960
+time with assignment one. Uh it's due
+
+3
+00:00:08,880 --> 00:00:14,000
+tonight. Uh let us know if you need an
+
+4
+00:00:10,960 --> 00:00:15,920
+extension. Assignment due two is uh
+
+5
+00:00:14,000 --> 00:00:17,920
+coming out soon. We're putting on the
+
+6
+00:00:15,920 --> 00:00:20,160
+finishing touches onto some of the the
+
+7
+00:00:17,920 --> 00:00:22,080
+Triton stuff. Um hopefully you'll enjoy
+
+8
+00:00:20,160 --> 00:00:24,240
+it. You'll get to implement um Flash
+
+9
+00:00:22,080 --> 00:00:27,359
+Attention 2 or parts of Flash Attention
+
+10
+00:00:24,240 --> 00:00:29,039
+2 which I think will be nice.
+
+11
+00:00:27,359 --> 00:00:32,880
+So today we're going to talk about uh
+
+12
+00:00:29,039 --> 00:00:35,360
+GPUs. GPUs are the thing that makes our
+
+13
+00:00:32,880 --> 00:00:38,320
+language models go. So they're pretty
+
+14
+00:00:35,360 --> 00:00:40,559
+critical to get right. Um and if you
+
+15
+00:00:38,320 --> 00:00:42,399
+haven't really studied, you know, the
+
+16
+00:00:40,559 --> 00:00:45,040
+hardware that makes you know your models
+
+17
+00:00:42,399 --> 00:00:47,840
+run, they can seem pretty mysterious. So
+
+18
+00:00:45,040 --> 00:00:51,760
+my goal today is to try to make CUDA and
+
+19
+00:00:47,840 --> 00:00:53,520
+GPUs less magic. Um and one of the
+
+20
+00:00:51,760 --> 00:00:54,480
+things that I want to demystify, you
+
+21
+00:00:53,520 --> 00:00:56,239
+don't have to understand the plot.
+
+22
+00:00:54,480 --> 00:01:00,000
+There's a there's a lot on the slide I
+
+23
+00:00:56,239 --> 00:01:02,000
+know. Um you know why do GPUs get slow?
+
+24
+00:01:00,000 --> 00:01:03,840
+And they get slow in very mysterious
+
+25
+00:01:02,000 --> 00:01:05,840
+ways. You know I will try to talk
+
+26
+00:01:03,840 --> 00:01:08,159
+through this plot um near towards the
+
+27
+00:01:05,840 --> 00:01:10,400
+end of lecture. As you increase the size
+
+28
+00:01:08,159 --> 00:01:12,960
+of your matrix multiplies you might
+
+29
+00:01:10,400 --> 00:01:15,280
+expect you know either gets slower or
+
+30
+00:01:12,960 --> 00:01:18,320
+faster or whatever you get these very
+
+31
+00:01:15,280 --> 00:01:20,960
+unpredictable looking wavelike patterns
+
+32
+00:01:18,320 --> 00:01:22,799
+and you're like why is my GPU fast at
+
+33
+00:01:20,960 --> 00:01:24,520
+certain multiples of certain numbers and
+
+34
+00:01:22,799 --> 00:01:26,600
+slow at others? Right? It's very
+
+35
+00:01:24,520 --> 00:01:28,960
+mysterious. We'll try to understand
+
+36
+00:01:26,600 --> 00:01:30,159
+that. The other thing is we would like
+
+37
+00:01:28,960 --> 00:01:32,720
+to understand how to make fast
+
+38
+00:01:30,159 --> 00:01:34,720
+algorithms. Um I think almost all of you
+
+39
+00:01:32,720 --> 00:01:36,560
+have heard of flash attention. Um it's
+
+40
+00:01:34,720 --> 00:01:39,360
+the thing that makes you know much
+
+41
+00:01:36,560 --> 00:01:41,360
+longer context possible by very cleverly
+
+42
+00:01:39,360 --> 00:01:44,240
+computing the attention operation inside
+
+43
+00:01:41,360 --> 00:01:45,759
+a transformer. And so maybe you would
+
+44
+00:01:44,240 --> 00:01:47,840
+like to you know come up with new
+
+45
+00:01:45,759 --> 00:01:49,520
+algorithms or new implementations like
+
+46
+00:01:47,840 --> 00:01:51,119
+flash attention right like what
+
+47
+00:01:49,520 --> 00:01:52,960
+primitives and what components do we
+
+48
+00:01:51,119 --> 00:01:54,320
+need to understand in order to be able
+
+49
+00:01:52,960 --> 00:01:56,159
+to do that right so those are kind of
+
+50
+00:01:54,320 --> 00:01:57,680
+the two learning goals of today the
+
+51
+00:01:56,159 --> 00:01:58,719
+first one is you know by the end of the
+
+52
+00:01:57,680 --> 00:02:00,320
+lecture you should feel kind of
+
+53
+00:01:58,719 --> 00:02:02,159
+comfortable with GPUs you should kind of
+
+54
+00:02:00,320 --> 00:02:03,520
+understand how they work and the second
+
+55
+00:02:02,159 --> 00:02:05,040
+one is you should feel comfortable
+
+56
+00:02:03,520 --> 00:02:06,960
+accelerating certain parts of your
+
+57
+00:02:05,040 --> 00:02:08,560
+algorithms you make a new architecture
+
+58
+00:02:06,960 --> 00:02:12,879
+you should hopefully feel like you can
+
+59
+00:02:08,560 --> 00:02:14,959
+try to to accelerate that with CUDA Um,
+
+60
+00:02:12,879 --> 00:02:16,640
+and because hardware is not necessarily
+
+61
+00:02:14,959 --> 00:02:18,800
+the domain in which I work, you know,
+
+62
+00:02:16,640 --> 00:02:20,160
+there's uh special resources that I have
+
+63
+00:02:18,800 --> 00:02:22,319
+to give a lot of credit to, especially
+
+64
+00:02:20,160 --> 00:02:24,160
+Horus Heath's blog where he's got a lot
+
+65
+00:02:22,319 --> 00:02:26,080
+of fun GPU facts that you can learn
+
+66
+00:02:24,160 --> 00:02:27,840
+about. For example, why are matrix
+
+67
+00:02:26,080 --> 00:02:29,280
+multiplies that are filled with zeros
+
+68
+00:02:27,840 --> 00:02:31,440
+faster than ones that are not filled
+
+69
+00:02:29,280 --> 00:02:33,280
+with zeros. You can learn by going to
+
+70
+00:02:31,440 --> 00:02:34,959
+his blog. There's also other resources
+
+71
+00:02:33,280 --> 00:02:36,640
+that I've drawn from like the CUDA mode
+
+72
+00:02:34,959 --> 00:02:39,040
+group and the and the nice TPU book from
+
+73
+00:02:36,640 --> 00:02:40,160
+Google. Um, if this topic interests you,
+
+74
+00:02:39,040 --> 00:02:41,760
+you know, I'd encourage you to go and
+
+75
+00:02:40,160 --> 00:02:43,200
+look at those resources to learn more
+
+76
+00:02:41,760 --> 00:02:45,519
+because this is in in some ways like a
+
+77
+00:02:43,200 --> 00:02:47,319
+shallow but hopefully you know complete
+
+78
+00:02:45,519 --> 00:02:49,440
+coverage of the
+
+79
+00:02:47,319 --> 00:02:52,000
+hardware. So today we're only going to
+
+80
+00:02:49,440 --> 00:02:54,080
+focus on uh, you know, nonp parallel
+
+81
+00:02:52,000 --> 00:02:55,760
+parts of the hardware stack. So we're
+
+82
+00:02:54,080 --> 00:02:57,920
+going to study the GPU like a single
+
+83
+00:02:55,760 --> 00:02:59,760
+accelerator in depth, how they work and
+
+84
+00:02:57,920 --> 00:03:01,840
+some important parts. I'm also going to
+
+85
+00:02:59,760 --> 00:03:03,440
+talk very very briefly about TPUs
+
+86
+00:03:01,840 --> 00:03:05,519
+because in some ways they're very
+
+87
+00:03:03,440 --> 00:03:07,440
+similar conceptually to a GPU. And so my
+
+88
+00:03:05,519 --> 00:03:09,519
+discussion here is going to carry over.
+
+89
+00:03:07,440 --> 00:03:11,519
+Um and then once we understand kind of
+
+90
+00:03:09,519 --> 00:03:13,200
+the hardware and execution model of the
+
+91
+00:03:11,519 --> 00:03:15,920
+GPU, then we're going to try to
+
+92
+00:03:13,200 --> 00:03:17,680
+understand what makes GPUs go fast on
+
+93
+00:03:15,920 --> 00:03:18,640
+certain workloads, what makes them slow.
+
+94
+00:03:17,680 --> 00:03:20,480
+We're going to understand the
+
+95
+00:03:18,640 --> 00:03:21,840
+performance. And in the last part, this
+
+96
+00:03:20,480 --> 00:03:24,159
+is kind of going to be almost like a
+
+97
+00:03:21,840 --> 00:03:26,159
+hands-on piece. Um I'm going to try to
+
+98
+00:03:24,159 --> 00:03:27,760
+walk through flash attention, right? I'm
+
+99
+00:03:26,159 --> 00:03:29,440
+going to take all the lessons that we've
+
+100
+00:03:27,760 --> 00:03:31,440
+learned and try to walk you through
+
+101
+00:03:29,440 --> 00:03:32,799
+flash attention saying see here's how it
+
+102
+00:03:31,440 --> 00:03:36,040
+all comes together. Right? So that's the
+
+103
+00:03:32,799 --> 00:03:39,760
+last part um of today's
+
+104
+00:03:36,040 --> 00:03:41,440
+lecture. So you know many of you have
+
+105
+00:03:39,760 --> 00:03:43,680
+you know taken an NLP course and these
+
+106
+00:03:41,440 --> 00:03:45,040
+days in an NLP course I think you teach
+
+107
+00:03:43,680 --> 00:03:47,280
+some amount of scaling laws and so
+
+108
+00:03:45,040 --> 00:03:50,000
+you've probably seen this right and so
+
+109
+00:03:47,280 --> 00:03:52,000
+this is just setting the context. Um we
+
+110
+00:03:50,000 --> 00:03:54,159
+know that having more compute is helpful
+
+111
+00:03:52,000 --> 00:03:55,920
+for training large language models. Um
+
+112
+00:03:54,159 --> 00:03:57,280
+this is a pre-training scaling chart but
+
+113
+00:03:55,920 --> 00:03:59,599
+you could replace this with an inference
+
+114
+00:03:57,280 --> 00:04:01,120
+scaling chart if you would like. Um it's
+
+115
+00:03:59,599 --> 00:04:02,879
+generally agreed upon that the more
+
+116
+00:04:01,120 --> 00:04:04,480
+compute you have the more processing you
+
+117
+00:04:02,879 --> 00:04:06,400
+can do on your data. You can ingest more
+
+118
+00:04:04,480 --> 00:04:08,080
+data, you can train larger models, all
+
+119
+00:04:06,400 --> 00:04:10,400
+of those lead to improved performance,
+
+120
+00:04:08,080 --> 00:04:11,599
+right? So you might think of, of course,
+
+121
+00:04:10,400 --> 00:04:12,959
+you know, deep learning is really
+
+122
+00:04:11,599 --> 00:04:14,560
+important, but what's really driven
+
+123
+00:04:12,959 --> 00:04:16,320
+performance is, you know, faster
+
+124
+00:04:14,560 --> 00:04:18,720
+hardware, better utilization, improved
+
+125
+00:04:16,320 --> 00:04:21,199
+parallelization, right? So that's kind
+
+126
+00:04:18,720 --> 00:04:23,840
+of setting the stage of why hardware is
+
+127
+00:04:21,199 --> 00:04:25,199
+important to understand. And of course,
+
+128
+00:04:23,840 --> 00:04:26,800
+you know, once you think about compute
+
+129
+00:04:25,199 --> 00:04:29,120
+scaling, you ask, okay, how do we get
+
+130
+00:04:26,800 --> 00:04:31,759
+compute scaling? How do we get our
+
+131
+00:04:29,120 --> 00:04:33,520
+models to train faster? So kind of in
+
+132
+00:04:31,759 --> 00:04:35,919
+the early days you know of of
+
+133
+00:04:33,520 --> 00:04:38,160
+semiconductor scaling um if you were
+
+134
+00:04:35,919 --> 00:04:40,800
+thinking about okay are CPUs how do they
+
+135
+00:04:38,160 --> 00:04:42,000
+get faster um they were they you know
+
+136
+00:04:40,800 --> 00:04:44,320
+would scale under something called
+
+137
+00:04:42,000 --> 00:04:45,840
+Dennard scaling right um with Moors law
+
+138
+00:04:44,320 --> 00:04:48,560
+you would sort of double the the amount
+
+139
+00:04:45,840 --> 00:04:50,080
+of transistors on a chip every year um
+
+140
+00:04:48,560 --> 00:04:53,199
+and if you have this doubling what you
+
+141
+00:04:50,080 --> 00:04:54,880
+end up is um darded scaling where
+
+142
+00:04:53,199 --> 00:04:56,639
+smaller and smaller transistors can be
+
+143
+00:04:54,880 --> 00:04:58,639
+driven at faster and faster clock speeds
+
+144
+00:04:56,639 --> 00:05:00,479
+with lower and lower power um which in
+
+145
+00:04:58,639 --> 00:05:03,040
+turn give you more performance right and
+
+146
+00:05:00,479 --> 00:05:04,400
+in the in the 1980s to 2000s, this sort
+
+147
+00:05:03,040 --> 00:05:05,919
+of tapped out. You can kind of see in
+
+148
+00:05:04,400 --> 00:05:07,520
+this chart here by Hennessy and
+
+149
+00:05:05,919 --> 00:05:09,360
+Patterson, that single thread
+
+150
+00:05:07,520 --> 00:05:11,120
+performance, that's the blue dots here,
+
+151
+00:05:09,360 --> 00:05:12,560
+um that basically started to taper out.
+
+152
+00:05:11,120 --> 00:05:14,479
+Of course, the number of transistors
+
+153
+00:05:12,560 --> 00:05:16,240
+didn't really, you know, start falling
+
+154
+00:05:14,479 --> 00:05:17,759
+off. You did have, you know, chips with
+
+155
+00:05:16,240 --> 00:05:19,039
+higher and higher transistor densities,
+
+156
+00:05:17,759 --> 00:05:20,960
+but that wasn't helpful. It wasn't
+
+157
+00:05:19,039 --> 00:05:24,000
+giving you higher uh throughput on
+
+158
+00:05:20,960 --> 00:05:26,320
+single threads. Um and so this means
+
+159
+00:05:24,000 --> 00:05:28,479
+that we can't just do computation faster
+
+160
+00:05:26,320 --> 00:05:31,440
+in absolute terms. You know what we have
+
+161
+00:05:28,479 --> 00:05:34,080
+to make up for it with is parallel
+
+162
+00:05:31,440 --> 00:05:36,479
+scaling, right? So the story of scaling
+
+163
+00:05:34,080 --> 00:05:38,560
+for deep learning and neural networks is
+
+164
+00:05:36,479 --> 00:05:40,320
+going from single thread scaling which
+
+165
+00:05:38,560 --> 00:05:42,880
+is just doing your computation faster in
+
+166
+00:05:40,320 --> 00:05:44,560
+absolute terms um to parallel scaling
+
+167
+00:05:42,880 --> 00:05:47,280
+where you have a lot of workloads that
+
+168
+00:05:44,560 --> 00:05:49,280
+are all computed at once. Um, and this
+
+169
+00:05:47,280 --> 00:05:50,960
+is is one of my favorite, you know, uh,
+
+170
+00:05:49,280 --> 00:05:53,120
+sort of compute scaling charts by by
+
+171
+00:05:50,960 --> 00:05:55,039
+Bill Dowy in his keynote. Um, where, you
+
+172
+00:05:53,120 --> 00:05:57,759
+know, he's showing the super exponential
+
+173
+00:05:55,039 --> 00:06:00,320
+increase in the number of, um, sort of
+
+174
+00:05:57,759 --> 00:06:03,039
+integer operations per second, um, going
+
+175
+00:06:00,320 --> 00:06:05,199
+from, you know, the earliest K20s um, to
+
+176
+00:06:03,039 --> 00:06:08,319
+the H100, right? And it's kind of like
+
+177
+00:06:05,199 --> 00:06:11,199
+this really remarkable uh, exponential
+
+178
+00:06:08,319 --> 00:06:12,960
+or super exponential curve. And so, you
+
+179
+00:06:11,199 --> 00:06:15,680
+know, we have to really understand how
+
+180
+00:06:12,960 --> 00:06:17,600
+to take advantage of this curve in order
+
+181
+00:06:15,680 --> 00:06:19,199
+to really get the most out of our
+
+182
+00:06:17,600 --> 00:06:21,720
+language model, right? So, that's kind
+
+183
+00:06:19,199 --> 00:06:24,080
+of going to be our
+
+184
+00:06:21,720 --> 00:06:25,840
+goal. And so, I've already hinted at
+
+185
+00:06:24,080 --> 00:06:28,160
+this this kind of important difference,
+
+186
+00:06:25,840 --> 00:06:29,840
+right? CPU is is something that I think
+
+187
+00:06:28,160 --> 00:06:31,199
+everyone's familiar with once you sort
+
+188
+00:06:29,840 --> 00:06:32,960
+start doing programming, right? It's
+
+189
+00:06:31,199 --> 00:06:34,960
+this execution model of you have a
+
+190
+00:06:32,960 --> 00:06:36,560
+program, it goes through and in a single
+
+191
+00:06:34,960 --> 00:06:38,400
+thread, it executes step by step what's
+
+192
+00:06:36,560 --> 00:06:40,400
+happening. And in order to support that
+
+193
+00:06:38,400 --> 00:06:42,160
+kind of an execution model, what what do
+
+194
+00:06:40,400 --> 00:06:44,319
+you need? Well, you need big control
+
+195
+00:06:42,160 --> 00:06:46,319
+units. You just need to generally run
+
+196
+00:06:44,319 --> 00:06:47,600
+these things very quickly because you
+
+197
+00:06:46,319 --> 00:06:49,600
+have a lot of branching and you have a
+
+198
+00:06:47,600 --> 00:06:52,560
+lot of conditional control logic, right?
+
+199
+00:06:49,600 --> 00:06:55,039
+So a CPU, this is a abstracted diagram
+
+200
+00:06:52,560 --> 00:06:57,280
+is going to dedicate, you know, a lot of
+
+201
+00:06:55,039 --> 00:06:59,280
+of its chip towards, you know, large
+
+202
+00:06:57,280 --> 00:07:00,960
+control branch prediction and it's going
+
+203
+00:06:59,280 --> 00:07:02,160
+to run these, you know, very quickly
+
+204
+00:07:00,960 --> 00:07:03,919
+because it doesn't have that many
+
+205
+00:07:02,160 --> 00:07:05,440
+threads. you know, there there are CPUs
+
+206
+00:07:03,919 --> 00:07:08,080
+with lots and lots of cores now, but
+
+207
+00:07:05,440 --> 00:07:11,360
+compared to a GPU, it's almost nothing.
+
+208
+00:07:08,080 --> 00:07:14,160
+And so in in contrast, the GPU has
+
+209
+00:07:11,360 --> 00:07:16,000
+really tons and tons of compute units,
+
+210
+00:07:14,160 --> 00:07:18,720
+ALUS, right? So there's the little green
+
+211
+00:07:16,000 --> 00:07:20,400
+boxes and there's much smaller amounts
+
+212
+00:07:18,720 --> 00:07:22,240
+of the chip dedicated to control. So
+
+213
+00:07:20,400 --> 00:07:24,479
+there's a little bit of control logic
+
+214
+00:07:22,240 --> 00:07:26,639
+sort of orchestrating tons and tons of
+
+215
+00:07:24,479 --> 00:07:29,599
+compute units, you know, operating in
+
+216
+00:07:26,639 --> 00:07:31,360
+parallel. Um, and I think mentally, so
+
+217
+00:07:29,599 --> 00:07:33,680
+this is kind of the the picture of what
+
+218
+00:07:31,360 --> 00:07:35,680
+is being emphasized in in a CPU versus
+
+219
+00:07:33,680 --> 00:07:37,680
+GPU. But if you kind of look at what's
+
+220
+00:07:35,680 --> 00:07:40,720
+the design goals are, they they designed
+
+221
+00:07:37,680 --> 00:07:42,639
+for very different sort of goals. So you
+
+222
+00:07:40,720 --> 00:07:44,800
+can think about CPUs as optimizing for
+
+223
+00:07:42,639 --> 00:07:46,880
+latency. I want to finish my tasks as
+
+224
+00:07:44,800 --> 00:07:49,840
+quickly as possible. So if I have tasks
+
+225
+00:07:46,880 --> 00:07:52,240
+um T1 through uh T4 here on on the right
+
+226
+00:07:49,840 --> 00:07:54,240
+side, you know, in a CPU, I'm going to
+
+227
+00:07:52,240 --> 00:07:56,319
+try to finish each task as quickly as
+
+228
+00:07:54,240 --> 00:07:58,240
+possible. And so if you want any one of
+
+229
+00:07:56,319 --> 00:08:00,240
+these tasks to be finished quickly, T1's
+
+230
+00:07:58,240 --> 00:08:02,240
+going to complete really quickly. In
+
+231
+00:08:00,240 --> 00:08:03,520
+GPU, you're optimizing for high
+
+232
+00:08:02,240 --> 00:08:05,680
+throughput. Like I don't care about
+
+233
+00:08:03,520 --> 00:08:07,599
+latency. I just want all of my tasks
+
+234
+00:08:05,680 --> 00:08:09,120
+that I have in aggregate to complete as
+
+235
+00:08:07,599 --> 00:08:10,560
+quickly as possible. And to support
+
+236
+00:08:09,120 --> 00:08:12,000
+that, you know, maybe you have lots of
+
+237
+00:08:10,560 --> 00:08:14,240
+threads and these threads can go to
+
+238
+00:08:12,000 --> 00:08:16,000
+sleep and wake up very quickly. Um, and
+
+239
+00:08:14,240 --> 00:08:17,919
+in the end, you know, you you finish all
+
+240
+00:08:16,000 --> 00:08:20,800
+of your workload T1 through T4, you
+
+241
+00:08:17,919 --> 00:08:22,240
+know, before the the CPU one does, even
+
+242
+00:08:20,800 --> 00:08:23,680
+though individually all of these have
+
+243
+00:08:22,240 --> 00:08:26,000
+sort of higher latency, right? So they
+
+244
+00:08:23,680 --> 00:08:27,879
+have different sort of design principles
+
+245
+00:08:26,000 --> 00:08:32,479
+um and design
+
+246
+00:08:27,879 --> 00:08:34,000
+goals. Okay. And so um a GPU has a has a
+
+247
+00:08:32,479 --> 00:08:35,599
+pretty different anatomy. And I don't
+
+248
+00:08:34,000 --> 00:08:38,240
+know if you know you all have ever
+
+249
+00:08:35,599 --> 00:08:39,440
+looked at what a a GPU sort of layout
+
+250
+00:08:38,240 --> 00:08:42,080
+diagram looks like. I'll actually show
+
+251
+00:08:39,440 --> 00:08:45,600
+you the the chip um figures in a moment
+
+252
+00:08:42,080 --> 00:08:47,440
+here. Um but the core idea and this is
+
+253
+00:08:45,600 --> 00:08:51,680
+important conceptual concepts behind a
+
+254
+00:08:47,440 --> 00:08:54,000
+GPU. um is that a GPU executes you know
+
+255
+00:08:51,680 --> 00:08:55,560
+uh many many SM streaming
+
+256
+00:08:54,000 --> 00:08:57,519
+multipprocessors and a streaming
+
+257
+00:08:55,560 --> 00:08:59,120
+multipprocessor you can kind of think of
+
+258
+00:08:57,519 --> 00:09:00,880
+as an atomic unit when you're
+
+259
+00:08:59,120 --> 00:09:02,399
+programming in something like Triton
+
+260
+00:09:00,880 --> 00:09:05,200
+they're going to operate at the level of
+
+261
+00:09:02,399 --> 00:09:07,839
+a of an SM and within each SM they're
+
+262
+00:09:05,200 --> 00:09:10,160
+going to uh it contains many SPS
+
+263
+00:09:07,839 --> 00:09:12,800
+streaming processors and a streaming
+
+264
+00:09:10,160 --> 00:09:15,600
+processor is going to execute a whole
+
+265
+00:09:12,800 --> 00:09:17,760
+bunch of threads in parallel so one way
+
+266
+00:09:15,600 --> 00:09:19,440
+to think about it is SM has a bunch of
+
+267
+00:09:17,760 --> 00:09:20,720
+control logic. It can decide what to
+
+268
+00:09:19,440 --> 00:09:23,519
+execute. It can do, for example,
+
+269
+00:09:20,720 --> 00:09:26,160
+branching. SPs are going to operate to
+
+270
+00:09:23,519 --> 00:09:28,000
+to take the same instruction and apply
+
+271
+00:09:26,160 --> 00:09:30,000
+it to many different pieces of data,
+
+272
+00:09:28,000 --> 00:09:32,560
+right? And so you can do tons and tons
+
+273
+00:09:30,000 --> 00:09:34,640
+of parallel computation um under this
+
+274
+00:09:32,560 --> 00:09:36,959
+model. An SM is sort of each granular
+
+275
+00:09:34,640 --> 00:09:38,720
+unit of control. SP can do a lot of
+
+276
+00:09:36,959 --> 00:09:40,480
+computation individually. And if you
+
+277
+00:09:38,720 --> 00:09:42,959
+look at an A100, which is the previous
+
+278
+00:09:40,480 --> 00:09:45,279
+generation GPU at this point, um you've
+
+279
+00:09:42,959 --> 00:09:47,680
+got 128 SM, you know, that's a lot more
+
+280
+00:09:45,279 --> 00:09:49,760
+than than most cores for for CPUs. And
+
+281
+00:09:47,680 --> 00:09:52,320
+each of these SM is going to have a very
+
+282
+00:09:49,760 --> 00:09:56,720
+large number of uh SPS and specialized
+
+283
+00:09:52,320 --> 00:09:56,720
+sort of matrix multiply units um inside
+
+284
+00:09:58,040 --> 00:10:01,760
+them. And so that's kind of the the
+
+285
+00:10:00,240 --> 00:10:03,080
+compute model. Uh was there a question?
+
+286
+00:10:01,760 --> 00:10:04,680
+Sorry.
+
+287
+00:10:03,080 --> 00:10:09,360
+Yeah.
+
+288
+00:10:04,680 --> 00:10:12,160
+to get the slide before GPUs. So is this
+
+289
+00:10:09,360 --> 00:10:13,760
+GPU the same as a GPU? So the question
+
+290
+00:10:12,160 --> 00:10:15,279
+was is this GPU the same as that GPU?
+
+291
+00:10:13,760 --> 00:10:17,760
+Yes. Like this is a this is a kind of
+
+292
+00:10:15,279 --> 00:10:19,920
+cartoon version of of this. You can kind
+
+293
+00:10:17,760 --> 00:10:21,839
+of think of each row as being SM. It's
+
+294
+00:10:19,920 --> 00:10:23,920
+got its own control units. Each green
+
+295
+00:10:21,839 --> 00:10:26,399
+block might be sort of uh one of these
+
+296
+00:10:23,920 --> 00:10:28,800
+green blocks here like a SP32 uh sort of
+
+297
+00:10:26,399 --> 00:10:30,959
+processing unit inside of it. And each
+
+298
+00:10:28,800 --> 00:10:33,120
+SM can sort of you know operate various
+
+299
+00:10:30,959 --> 00:10:36,279
+pieces that it that it owns like the
+
+300
+00:10:33,120 --> 00:10:38,760
+tensor cores to do
+
+301
+00:10:36,279 --> 00:10:42,399
+computation.
+
+302
+00:10:38,760 --> 00:10:44,399
+Cool. Okay. And there's going to be uh
+
+303
+00:10:42,399 --> 00:10:46,399
+two important things. You think of GPU
+
+304
+00:10:44,399 --> 00:10:48,399
+as you know computers they compute but
+
+305
+00:10:46,399 --> 00:10:49,760
+actually computation is only one of the
+
+306
+00:10:48,399 --> 00:10:52,240
+two important things we have to keep
+
+307
+00:10:49,760 --> 00:10:53,920
+track of right. memory is arguably more
+
+308
+00:10:52,240 --> 00:10:55,760
+important um at this point and it will
+
+309
+00:10:53,920 --> 00:10:57,680
+continue to be more important in terms
+
+310
+00:10:55,760 --> 00:11:00,399
+of the performance profiles of how we
+
+311
+00:10:57,680 --> 00:11:01,920
+run our programs on the GPU. Um, and so
+
+312
+00:11:00,399 --> 00:11:03,680
+to understand memory, you kind of have
+
+313
+00:11:01,920 --> 00:11:05,680
+to understand the physical layout of the
+
+314
+00:11:03,680 --> 00:11:07,360
+GPU and the chip because in some sense
+
+315
+00:11:05,680 --> 00:11:10,320
+the, you know, when you're operating at
+
+316
+00:11:07,360 --> 00:11:12,079
+such fast speeds, the physical proximity
+
+317
+00:11:10,320 --> 00:11:13,360
+of the memory starts to matter quite a
+
+318
+00:11:12,079 --> 00:11:14,800
+bit. And so I will show you kind of the
+
+319
+00:11:13,360 --> 00:11:16,640
+physical proximity of how things are
+
+320
+00:11:14,800 --> 00:11:19,079
+laid out and how that relates to how you
+
+321
+00:11:16,640 --> 00:11:21,680
+should think about memory access um, and
+
+322
+00:11:19,079 --> 00:11:24,640
+performance. So the closer a piece of
+
+323
+00:11:21,680 --> 00:11:26,720
+memory is to to each SM um, the faster
+
+324
+00:11:24,640 --> 00:11:28,640
+it's going to be. So there's going to be
+
+325
+00:11:26,720 --> 00:11:31,040
+certain very very very fast kinds of
+
+326
+00:11:28,640 --> 00:11:33,519
+memory like L1 um and shared memory and
+
+327
+00:11:31,040 --> 00:11:34,959
+that's going to live inside uh of the
+
+328
+00:11:33,519 --> 00:11:36,640
+SM, right? And that's going to be really
+
+329
+00:11:34,959 --> 00:11:37,680
+fast, right? Things like registers,
+
+330
+00:11:36,640 --> 00:11:39,519
+things like things you're reading and
+
+331
+00:11:37,680 --> 00:11:41,000
+writing very frequently, you're going to
+
+332
+00:11:39,519 --> 00:11:44,079
+want to put into the L1 and shared
+
+333
+00:11:41,000 --> 00:11:46,079
+memory L2 cache. Um as you can kind of
+
+334
+00:11:44,079 --> 00:11:48,399
+see, there's these green areas which are
+
+335
+00:11:46,079 --> 00:11:50,399
+SM. And then there's these blue areas.
+
+336
+00:11:48,399 --> 00:11:53,120
+This is on the GPU chip, right? These
+
+337
+00:11:50,399 --> 00:11:54,560
+are L2 uh memory that's sort of right
+
+338
+00:11:53,120 --> 00:11:56,079
+next to the SM, right? So they're
+
+339
+00:11:54,560 --> 00:11:58,480
+they're not inside the SM, but they're
+
+340
+00:11:56,079 --> 00:12:01,120
+physically still quite close, right? Um
+
+341
+00:11:58,480 --> 00:12:03,920
+and these are still pretty fast. Um you
+
+342
+00:12:01,120 --> 00:12:05,760
+know, they're they're still a factor of
+
+343
+00:12:03,920 --> 00:12:08,160
+10 slower, but they're still reasonably
+
+344
+00:12:05,760 --> 00:12:10,240
+fast. And then outside of the chip
+
+345
+00:12:08,160 --> 00:12:12,079
+itself, this is sort of a you know, I
+
+346
+00:12:10,240 --> 00:12:14,160
+think this is like a 3090 card or
+
+347
+00:12:12,079 --> 00:12:16,480
+something like this or maybe a PCIe 100.
+
+348
+00:12:14,160 --> 00:12:18,240
+Oh, this is a PCI 100. Um you know,
+
+349
+00:12:16,480 --> 00:12:21,360
+you've got your your GPU here and you've
+
+350
+00:12:18,240 --> 00:12:23,120
+got actually DRAM sort of living next to
+
+351
+00:12:21,360 --> 00:12:25,200
+the chip, right? it has to actually go
+
+352
+00:12:23,120 --> 00:12:26,720
+physically outside of the chip um and
+
+353
+00:12:25,200 --> 00:12:29,120
+connect. And you can kind of see on on
+
+354
+00:12:26,720 --> 00:12:31,120
+this uh chip diagram here, these yellow
+
+355
+00:12:29,120 --> 00:12:33,680
+connectors at the edges. These are HPM
+
+356
+00:12:31,120 --> 00:12:37,440
+connectors. Um these are connecting to
+
+357
+00:12:33,680 --> 00:12:39,360
+the the DRAM chips that are outside of
+
+358
+00:12:37,440 --> 00:12:41,760
+the actual GPU. And you can kind of see
+
+359
+00:12:39,360 --> 00:12:44,800
+the the speed that it takes to access
+
+360
+00:12:41,760 --> 00:12:47,040
+these, right? the onsm memory is much
+
+361
+00:12:44,800 --> 00:12:48,720
+much faster like 20 clock cycles to
+
+362
+00:12:47,040 --> 00:12:50,399
+access something from there whereas it's
+
+363
+00:12:48,720 --> 00:12:52,079
+going to take something like 200 or 300
+
+364
+00:12:50,399 --> 00:12:54,639
+clock cycles to access something from
+
+365
+00:12:52,079 --> 00:12:56,160
+the L2 cache or global memory right and
+
+366
+00:12:54,639 --> 00:12:58,720
+this factor of 10 is going to hurt you
+
+367
+00:12:56,160 --> 00:13:01,120
+real bad right so if you if you have um
+
+368
+00:12:58,720 --> 00:13:03,680
+a piece of computation that requires you
+
+369
+00:13:01,120 --> 00:13:05,120
+to access global memory right it might
+
+370
+00:13:03,680 --> 00:13:06,720
+mean that you actually run out of work
+
+371
+00:13:05,120 --> 00:13:08,639
+to do on your SM you've multiplied all
+
+372
+00:13:06,720 --> 00:13:10,240
+the matrices you've run out now you just
+
+373
+00:13:08,639 --> 00:13:11,760
+have to idle right so utilization won't
+
+374
+00:13:10,240 --> 00:13:13,600
+be good and this will be a really key
+
+375
+00:13:11,760 --> 00:13:15,839
+theme thinking about memories in some
+
+376
+00:13:13,600 --> 00:13:17,160
+sense the key to thinking about um how
+
+377
+00:13:15,839 --> 00:13:19,680
+GPUs
+
+378
+00:13:17,160 --> 00:13:22,480
+work and in assignment two you're going
+
+379
+00:13:19,680 --> 00:13:24,639
+to you know actually be writing um high
+
+380
+00:13:22,480 --> 00:13:26,639
+performance code for a GPU so you have
+
+381
+00:13:24,639 --> 00:13:28,720
+to actually think about um the execution
+
+382
+00:13:26,639 --> 00:13:31,519
+model of how a GPU actually executes
+
+383
+00:13:28,720 --> 00:13:34,800
+things um and this is somewhat
+
+384
+00:13:31,519 --> 00:13:37,120
+complicated but not not insanely so um
+
+385
+00:13:34,800 --> 00:13:38,959
+the there's sort of three granularities
+
+386
+00:13:37,120 --> 00:13:41,440
+of things that you need to think about
+
+387
+00:13:38,959 --> 00:13:43,200
+there's blocks there's warps and there's
+
+388
+00:13:41,440 --> 00:13:45,120
+threads and that's the order in which
+
+389
+00:13:43,200 --> 00:13:47,760
+kind of the granularity narrows down,
+
+390
+00:13:45,120 --> 00:13:50,480
+right? Blocks are kind of these big
+
+391
+00:13:47,760 --> 00:13:52,560
+groups of threads and each block is
+
+392
+00:13:50,480 --> 00:13:54,320
+going to be assigned to a SM. So think
+
+393
+00:13:52,560 --> 00:13:56,720
+about this as each SM is kind of a
+
+394
+00:13:54,320 --> 00:13:58,720
+worker. It's its own autonomous unit and
+
+395
+00:13:56,720 --> 00:14:00,480
+a block is going to be assigned to an SM
+
+396
+00:13:58,720 --> 00:14:03,440
+for to to process, right? So this is
+
+397
+00:14:00,480 --> 00:14:04,720
+each granular unit. Now then within
+
+398
+00:14:03,440 --> 00:14:06,399
+these blocks are a whole bunch of
+
+399
+00:14:04,720 --> 00:14:08,959
+threads. Each thread is a sort of a
+
+400
+00:14:06,399 --> 00:14:10,800
+piece of task that needs to be done. And
+
+401
+00:14:08,959 --> 00:14:12,720
+when these threads execute, they're
+
+402
+00:14:10,800 --> 00:14:14,720
+going to execute in groups. Um, and this
+
+403
+00:14:12,720 --> 00:14:16,160
+is a thing called a warp, right? So you
+
+404
+00:14:14,720 --> 00:14:18,320
+take a block, which is a collection of
+
+405
+00:14:16,160 --> 00:14:19,839
+threads, and you're going to take, you
+
+406
+00:14:18,320 --> 00:14:21,839
+know, threads from that block, and
+
+407
+00:14:19,839 --> 00:14:23,839
+they're going to execute in groups of 32
+
+408
+00:14:21,839 --> 00:14:24,880
+consecutively numbered threads, um, each
+
+409
+00:14:23,839 --> 00:14:27,040
+time. And that's sort of called, you
+
+410
+00:14:24,880 --> 00:14:28,639
+know, warps. And so you can kind of see
+
+411
+00:14:27,040 --> 00:14:30,480
+at this diagram here what's happening.
+
+412
+00:14:28,639 --> 00:14:32,320
+You've got a bunch of blocks. Each block
+
+413
+00:14:30,480 --> 00:14:33,760
+is assigned to a different SM. And
+
+414
+00:14:32,320 --> 00:14:36,240
+within each block, there's going to be
+
+415
+00:14:33,760 --> 00:14:38,079
+many different warps. And each warp is
+
+416
+00:14:36,240 --> 00:14:40,240
+going to consist of a whole bunch of
+
+417
+00:14:38,079 --> 00:14:42,399
+threads and all of these threads are
+
+418
+00:14:40,240 --> 00:14:44,639
+going to execute um the same instruction
+
+419
+00:14:42,399 --> 00:14:46,160
+on different data, right? And so this is
+
+420
+00:14:44,639 --> 00:14:47,839
+kind of the execution model. Right? Now
+
+421
+00:14:46,160 --> 00:14:49,519
+it's going to it seems probably
+
+422
+00:14:47,839 --> 00:14:50,800
+mysterious, you know, what these blocks
+
+423
+00:14:49,519 --> 00:14:52,959
+and warps and threads are. They will
+
+424
+00:14:50,800 --> 00:14:55,120
+have important implications uh for our
+
+425
+00:14:52,959 --> 00:14:57,680
+performance in how we design things like
+
+426
+00:14:55,120 --> 00:14:58,959
+uh CUDA kernels um later. So hopefully
+
+427
+00:14:57,680 --> 00:15:01,680
+you can kind of remember this. I'll I'll
+
+428
+00:14:58,959 --> 00:15:04,720
+refresh your memory um kind of as we go.
+
+429
+00:15:01,680 --> 00:15:06,399
+Um hopefully that's clear.
+
+430
+00:15:04,720 --> 00:15:08,800
+So that was the kind of logical
+
+431
+00:15:06,399 --> 00:15:10,079
+execution model of a GPU. Um, and if you
+
+432
+00:15:08,800 --> 00:15:12,959
+understand that, you kind of understand
+
+433
+00:15:10,079 --> 00:15:15,040
+how GPUs execute things. Um, there's
+
+434
+00:15:12,959 --> 00:15:16,560
+also a logical sort of memory model of a
+
+435
+00:15:15,040 --> 00:15:17,920
+GPU. So, you know, now I'm not showing
+
+436
+00:15:16,560 --> 00:15:18,880
+you the physical hardware. This is just
+
+437
+00:15:17,920 --> 00:15:22,320
+kind of how you think about the
+
+438
+00:15:18,880 --> 00:15:24,560
+programming um, of a GPU. And so there's
+
+439
+00:15:22,320 --> 00:15:26,079
+registers. So these are really fast, you
+
+440
+00:15:24,560 --> 00:15:28,160
+know, storing single numbers type
+
+441
+00:15:26,079 --> 00:15:30,160
+storage. You've got local memory, you
+
+442
+00:15:28,160 --> 00:15:32,000
+got shared memory, and you've got global
+
+443
+00:15:30,160 --> 00:15:34,959
+memory, right? And that that increases
+
+444
+00:15:32,000 --> 00:15:37,279
+in sort of the the memory hierarchy gets
+
+445
+00:15:34,959 --> 00:15:39,199
+slower and slower and slower. Um and
+
+446
+00:15:37,279 --> 00:15:40,560
+your code can sort of write to to global
+
+447
+00:15:39,199 --> 00:15:41,760
+memory. It can also write to constant
+
+448
+00:15:40,560 --> 00:15:45,279
+memory which is not something that's
+
+449
+00:15:41,760 --> 00:15:46,959
+that's used too often. Um and so each
+
+450
+00:15:45,279 --> 00:15:48,800
+thread can access you know its own
+
+451
+00:15:46,959 --> 00:15:50,880
+register and shared memory. But
+
+452
+00:15:48,800 --> 00:15:52,399
+information that goes across blocks need
+
+453
+00:15:50,880 --> 00:15:54,800
+to be written to global memory. This is
+
+454
+00:15:52,399 --> 00:15:56,560
+actually quite important right. So now
+
+455
+00:15:54,800 --> 00:15:58,399
+it means that you know whenever you
+
+456
+00:15:56,560 --> 00:16:00,399
+write a thread that executes something
+
+457
+00:15:58,399 --> 00:16:02,639
+ideally it's operating on sort of the
+
+458
+00:16:00,399 --> 00:16:04,079
+same small amount of data. So you load
+
+459
+00:16:02,639 --> 00:16:05,839
+that small amount of data into shared
+
+460
+00:16:04,079 --> 00:16:07,440
+memory all the threads are very happy
+
+461
+00:16:05,839 --> 00:16:09,120
+accessing that shared memory. It
+
+462
+00:16:07,440 --> 00:16:11,040
+terminates it's done right. That would
+
+463
+00:16:09,120 --> 00:16:12,480
+be a great execution model. Instead if
+
+464
+00:16:11,040 --> 00:16:14,240
+you have a thread that needs to access
+
+465
+00:16:12,480 --> 00:16:15,839
+data all over the place you know that's
+
+466
+00:16:14,240 --> 00:16:17,519
+going to have to access global memory
+
+467
+00:16:15,839 --> 00:16:18,959
+that's very very slow. This theme will
+
+468
+00:16:17,519 --> 00:16:21,680
+come back you know as we talk about
+
+469
+00:16:18,959 --> 00:16:24,560
+different ways of of operating uh on a
+
+470
+00:16:21,680 --> 00:16:26,320
+GPU. Um hopefully that's clear. Um
+
+471
+00:16:24,560 --> 00:16:29,440
+that's kind of the the very you know
+
+472
+00:16:26,320 --> 00:16:30,959
+high level four slide overview of a GPU.
+
+473
+00:16:29,440 --> 00:16:33,040
+If you have kind of questions about how
+
+474
+00:16:30,959 --> 00:16:34,680
+any of that works, feel free to ask me
+
+475
+00:16:33,040 --> 00:16:38,639
+um as I go
+
+476
+00:16:34,680 --> 00:16:40,320
+on. Okay, so here's a side thread. Um
+
+477
+00:16:38,639 --> 00:16:42,240
+last year I didn't cover this because I
+
+478
+00:16:40,320 --> 00:16:45,120
+think resources on TPU was a little
+
+479
+00:16:42,240 --> 00:16:46,880
+thin. Um but the nice TPU book or
+
+480
+00:16:45,120 --> 00:16:49,040
+internet website that I mentioned at the
+
+481
+00:16:46,880 --> 00:16:50,639
+start of the lecture came out. um and
+
+482
+00:16:49,040 --> 00:16:52,000
+that has actually a lot of nice details
+
+483
+00:16:50,639 --> 00:16:54,320
+and I and I talked to a few Google
+
+484
+00:16:52,000 --> 00:16:56,800
+people about the TPU um and at a high
+
+485
+00:16:54,320 --> 00:16:58,480
+level it's very very similar um to a GPU
+
+486
+00:16:56,800 --> 00:17:01,199
+and so I want to just talk for a moment
+
+487
+00:16:58,480 --> 00:17:02,639
+about TPUs you may never you know
+
+488
+00:17:01,199 --> 00:17:04,400
+operate on a TPU but I think it's
+
+489
+00:17:02,639 --> 00:17:06,559
+important to understand that these
+
+490
+00:17:04,400 --> 00:17:09,120
+alternative accelerators operate in in
+
+491
+00:17:06,559 --> 00:17:11,280
+in many ways very similarly
+
+492
+00:17:09,120 --> 00:17:13,919
+um so here's a diagram of what a TPU
+
+493
+00:17:11,280 --> 00:17:15,520
+looks like um there's kind of a so
+
+494
+00:17:13,919 --> 00:17:16,880
+there's something called a tensor core
+
+495
+00:17:15,520 --> 00:17:18,799
+and mentally you can think about a
+
+496
+00:17:16,880 --> 00:17:20,319
+tensor core as being similar to SM or
+
+497
+00:17:18,799 --> 00:17:22,160
+streaming multipprocessor. Each of these
+
+498
+00:17:20,319 --> 00:17:24,400
+are are kind of its own atomic units
+
+499
+00:17:22,160 --> 00:17:26,400
+that can operate on data. There's a
+
+500
+00:17:24,400 --> 00:17:28,640
+scalar unit which is basically a control
+
+501
+00:17:26,400 --> 00:17:30,880
+unit and it can also do CPU like
+
+502
+00:17:28,640 --> 00:17:32,640
+arbitrary things. You've got a vector
+
+503
+00:17:30,880 --> 00:17:34,080
+unit that can operate on vectors. So if
+
+504
+00:17:32,640 --> 00:17:35,760
+you got a vector and you want to operate
+
+505
+00:17:34,080 --> 00:17:37,600
+entry-wise on it, that's a good place to
+
+506
+00:17:35,760 --> 00:17:39,760
+do it. And then it's got a very big
+
+507
+00:17:37,600 --> 00:17:41,280
+specialized, you know, part of the chip
+
+508
+00:17:39,760 --> 00:17:43,679
+dedicated to just doing matrix
+
+509
+00:17:41,280 --> 00:17:45,919
+multiplies called the MXU. Um, and then
+
+510
+00:17:43,679 --> 00:17:47,679
+it's got very fast memory for vector
+
+511
+00:17:45,919 --> 00:17:50,240
+memory and SME. Both of these are very
+
+512
+00:17:47,679 --> 00:17:52,080
+fast onchip or like on tensor core
+
+513
+00:17:50,240 --> 00:17:53,760
+memory and then there's high bandwidth
+
+514
+00:17:52,080 --> 00:17:55,200
+memory that lives outside of the chip.
+
+515
+00:17:53,760 --> 00:17:56,720
+Right? So hopefully you see the
+
+516
+00:17:55,200 --> 00:17:58,640
+similarities to an SM, right? There's
+
+517
+00:17:56,720 --> 00:18:00,640
+slow memory outside, very fast memory
+
+518
+00:17:58,640 --> 00:18:03,200
+inside and there's specialized hardware
+
+519
+00:18:00,640 --> 00:18:05,520
+to do matrix multiplication. Core
+
+520
+00:18:03,200 --> 00:18:07,200
+structure is very much the same. Um the
+
+521
+00:18:05,520 --> 00:18:08,880
+difference is um I'll talk about this in
+
+522
+00:18:07,200 --> 00:18:10,640
+the parallelism lecture next week. You
+
+523
+00:18:08,880 --> 00:18:12,799
+know how the accelerators are together
+
+524
+00:18:10,640 --> 00:18:14,880
+is a little bit different. Um and then
+
+525
+00:18:12,799 --> 00:18:16,400
+also you know mention I didn't notice I
+
+526
+00:18:14,880 --> 00:18:18,240
+didn't talk about warps. I didn't talk
+
+527
+00:18:16,400 --> 00:18:19,760
+about any of that other stuff. Um,
+
+528
+00:18:18,240 --> 00:18:21,760
+tensor cores are in some ways very
+
+529
+00:18:19,760 --> 00:18:23,679
+simple because they're optimized to just
+
+530
+00:18:21,760 --> 00:18:25,600
+do matrix multiplies, right? Like the
+
+531
+00:18:23,679 --> 00:18:27,200
+tensor core unlike the GPU doesn't
+
+532
+00:18:25,600 --> 00:18:29,360
+attempt to do anything but that. And so
+
+533
+00:18:27,200 --> 00:18:31,280
+that's in some ways very very simple. Uh
+
+534
+00:18:29,360 --> 00:18:35,360
+much simpler in architecture but
+
+535
+00:18:31,280 --> 00:18:37,360
+conceptually doing the same thing.
+
+536
+00:18:35,360 --> 00:18:41,720
+Yes.
+
+537
+00:18:37,360 --> 00:18:45,200
+Is it tensor also in some ways optimized
+
+538
+00:18:41,720 --> 00:18:47,120
+to general tensor or this is just enough
+
+539
+00:18:45,200 --> 00:18:48,640
+to work on?
+
+540
+00:18:47,120 --> 00:18:50,000
+Yeah. So, so the question was you know
+
+541
+00:18:48,640 --> 00:18:53,679
+is it called tensor because it can
+
+542
+00:18:50,000 --> 00:18:55,360
+operate on arbitrary tensors. Um so it
+
+543
+00:18:53,679 --> 00:18:57,360
+can operate on arbitrary tensors like
+
+544
+00:18:55,360 --> 00:18:59,679
+can do the indexing the operations that
+
+545
+00:18:57,360 --> 00:19:01,200
+MXU performs is a matrix multiply and so
+
+546
+00:18:59,679 --> 00:19:03,360
+it would always be like a batch matrix
+
+547
+00:19:01,200 --> 00:19:05,039
+multiply operating on a tensor. So it's
+
+548
+00:19:03,360 --> 00:19:06,880
+kind of both a yes and a no answer if
+
+549
+00:19:05,039 --> 00:19:08,400
+that makes sense. So they operate on
+
+550
+00:19:06,880 --> 00:19:10,400
+tensors but the operations they always
+
+551
+00:19:08,400 --> 00:19:11,919
+perform are matrix multiplies not more
+
+552
+00:19:10,400 --> 00:19:13,400
+complicated tensor operations that you
+
+553
+00:19:11,919 --> 00:19:17,760
+can
+
+554
+00:19:13,400 --> 00:19:20,160
+do. Cool. Um the reason why the GPU has
+
+555
+00:19:17,760 --> 00:19:21,919
+been so successful is that you know it
+
+556
+00:19:20,160 --> 00:19:24,640
+scales up really easily. If you want
+
+557
+00:19:21,919 --> 00:19:26,000
+more processing power just add more SMS
+
+558
+00:19:24,640 --> 00:19:27,840
+right you don't have to worry about
+
+559
+00:19:26,000 --> 00:19:29,840
+driving the clock faster and getting
+
+560
+00:19:27,840 --> 00:19:32,400
+more heat dissipation problems. Um
+
+561
+00:19:29,840 --> 00:19:34,480
+programming wise um CUDA is intimidating
+
+562
+00:19:32,400 --> 00:19:36,559
+but it's actually you know not as
+
+563
+00:19:34,480 --> 00:19:38,080
+horrendous to program because of the its
+
+564
+00:19:36,559 --> 00:19:40,480
+programming model like the way it works
+
+565
+00:19:38,080 --> 00:19:42,160
+is within each SM right you have a
+
+566
+00:19:40,480 --> 00:19:43,600
+thread and it executes the same
+
+567
+00:19:42,160 --> 00:19:45,360
+instruction on a bunch of different
+
+568
+00:19:43,600 --> 00:19:46,799
+pieces of data right that's conceptually
+
+569
+00:19:45,360 --> 00:19:48,240
+sort of easy to reason about you can
+
+570
+00:19:46,799 --> 00:19:49,600
+think through what that means and
+
+571
+00:19:48,240 --> 00:19:51,039
+especially it's nice if you're operating
+
+572
+00:19:49,600 --> 00:19:52,720
+over a matrix and you're doing sort of
+
+573
+00:19:51,039 --> 00:19:55,919
+very simple operations it's exactly this
+
+574
+00:19:52,720 --> 00:19:57,520
+kind of simp model um finally each of
+
+575
+00:19:55,919 --> 00:19:58,960
+these threads are very lightweight and
+
+576
+00:19:57,520 --> 00:20:00,720
+they can be kind of stopped and started
+
+577
+00:19:58,960 --> 00:20:02,880
+at any time. And so if you need to wait
+
+578
+00:20:00,720 --> 00:20:04,320
+for another thread um or if you need to
+
+579
+00:20:02,880 --> 00:20:06,320
+sort of like evict something and like
+
+580
+00:20:04,320 --> 00:20:07,919
+start another process, all these threads
+
+581
+00:20:06,320 --> 00:20:09,280
+are very lightweight. So this just kind
+
+582
+00:20:07,919 --> 00:20:10,880
+of means that there's not much state
+
+583
+00:20:09,280 --> 00:20:12,080
+associated with the threads and they can
+
+584
+00:20:10,880 --> 00:20:14,960
+kind of be stopped and started which
+
+585
+00:20:12,080 --> 00:20:18,160
+allows GPUs to get high utilization um
+
+586
+00:20:14,960 --> 00:20:18,160
+within sort of each
+
+587
+00:20:18,679 --> 00:20:24,080
+SM. So GPUs, you know, obviously
+
+588
+00:20:21,760 --> 00:20:25,840
+graphics processing units. Um, and for
+
+589
+00:20:24,080 --> 00:20:27,840
+for much of its life, you know, in the
+
+590
+00:20:25,840 --> 00:20:30,880
+early days, it was not used to do
+
+591
+00:20:27,840 --> 00:20:32,880
+scientific computing. Um, but you know,
+
+592
+00:20:30,880 --> 00:20:35,120
+people because it was programmable,
+
+593
+00:20:32,880 --> 00:20:37,520
+researchers figured out how to use, you
+
+594
+00:20:35,120 --> 00:20:39,520
+know, early NVIDIA GPUs to do fast
+
+595
+00:20:37,520 --> 00:20:41,760
+matrix multiplies. Um, this is one of
+
+596
+00:20:39,520 --> 00:20:43,360
+the early papers on, you know, doing
+
+597
+00:20:41,760 --> 00:20:45,039
+fast matrix multiplies with graphics
+
+598
+00:20:43,360 --> 00:20:46,320
+hardware. Um, and it shows, you know,
+
+599
+00:20:45,039 --> 00:20:47,840
+how you can, you know, hack kind of
+
+600
+00:20:46,320 --> 00:20:49,360
+things like the texture buffer and so
+
+601
+00:20:47,840 --> 00:20:51,360
+on, uh, to get it to do matrix
+
+602
+00:20:49,360 --> 00:20:53,919
+multiplies, right? And so you know even
+
+603
+00:20:51,360 --> 00:20:55,559
+without specific support for mapm you
+
+604
+00:20:53,919 --> 00:20:59,039
+know researchers figured out how to do
+
+605
+00:20:55,559 --> 00:21:00,720
+it but I think now you know especially
+
+606
+00:20:59,039 --> 00:21:02,400
+in this day and age nvidia and others
+
+607
+00:21:00,720 --> 00:21:03,520
+have realized matrix multiplies are
+
+608
+00:21:02,400 --> 00:21:05,760
+special like if you're doing deep
+
+609
+00:21:03,520 --> 00:21:08,400
+learning right most of your workload is
+
+610
+00:21:05,760 --> 00:21:09,919
+matrix multiplies and so matrix
+
+611
+00:21:08,400 --> 00:21:12,799
+multiplies are in some sense blessed
+
+612
+00:21:09,919 --> 00:21:15,440
+operations so this is um a chart showing
+
+613
+00:21:12,799 --> 00:21:17,600
+um the number of teraflops per second by
+
+614
+00:21:15,440 --> 00:21:19,840
+different generations of Nvidia GPUs and
+
+615
+00:21:17,600 --> 00:21:21,120
+the orange line is your map mo flops
+
+616
+00:21:19,840 --> 00:21:22,720
+right? Like with your performance you
+
+617
+00:21:21,120 --> 00:21:25,120
+can get if you're doing matt moles. The
+
+618
+00:21:22,720 --> 00:21:26,559
+blue line is your non-matmo flops,
+
+619
+00:21:25,120 --> 00:21:29,600
+right? And you see kind of this big big
+
+620
+00:21:26,559 --> 00:21:31,679
+gap at v 100's when um they started
+
+621
+00:21:29,600 --> 00:21:34,480
+putting in sort of tensor cores that
+
+622
+00:21:31,679 --> 00:21:36,240
+were specialized hardware to do matrix
+
+623
+00:21:34,480 --> 00:21:38,080
+multiplies. And you see this gigantic
+
+624
+00:21:36,240 --> 00:21:40,080
+gap uh in the matrix multiply
+
+625
+00:21:38,080 --> 00:21:42,640
+performance relative to the non-mappable
+
+626
+00:21:40,080 --> 00:21:44,320
+performance, right? Um, and so if you're
+
+627
+00:21:42,640 --> 00:21:45,600
+going to design any sort of a neural
+
+628
+00:21:44,320 --> 00:21:47,440
+architecture, I was saying this, you
+
+629
+00:21:45,600 --> 00:21:49,200
+know, in the architecture part as well,
+
+630
+00:21:47,440 --> 00:21:51,520
+you have to have most of your workload
+
+631
+00:21:49,200 --> 00:21:52,640
+be matrix multiplies because that's the
+
+632
+00:21:51,520 --> 00:21:54,400
+thing that's, you know, orders of
+
+633
+00:21:52,640 --> 00:21:55,600
+magnitude faster than any other
+
+634
+00:21:54,400 --> 00:21:57,919
+operation that you're going to be able
+
+635
+00:21:55,600 --> 00:22:00,480
+to do uh on a GPU, right? So if you make
+
+636
+00:21:57,919 --> 00:22:03,440
+like a non-natmo based neural network,
+
+637
+00:22:00,480 --> 00:22:05,520
+you're going to be in a big big trouble.
+
+638
+00:22:03,440 --> 00:22:07,200
+And then kind of the the last thing that
+
+639
+00:22:05,520 --> 00:22:09,840
+I want you to kind of understand as just
+
+640
+00:22:07,200 --> 00:22:11,919
+general facts. Um you know matt moles is
+
+641
+00:22:09,840 --> 00:22:13,760
+fast is one thing but the other thing
+
+642
+00:22:11,919 --> 00:22:15,679
+that's important to remember is kind of
+
+643
+00:22:13,760 --> 00:22:18,240
+the relative scaling of the different
+
+644
+00:22:15,679 --> 00:22:20,240
+components of the GPU. So this is a very
+
+645
+00:22:18,240 --> 00:22:23,440
+nice chart that shows you know how
+
+646
+00:22:20,240 --> 00:22:25,440
+quickly different components of the uh
+
+647
+00:22:23,440 --> 00:22:27,520
+GPU or different components of the let's
+
+648
+00:22:25,440 --> 00:22:31,080
+call it like LM training stack are
+
+649
+00:22:27,520 --> 00:22:34,240
+scaling. So the blue line is the
+
+650
+00:22:31,080 --> 00:22:35,840
+connectivity from the GPU to the host,
+
+651
+00:22:34,240 --> 00:22:37,559
+right? Like the the server that it's
+
+652
+00:22:35,840 --> 00:22:39,919
+attached to, right? So you you can use
+
+653
+00:22:37,559 --> 00:22:41,679
+PCIe, you can use NVLink, you can use
+
+654
+00:22:39,919 --> 00:22:42,960
+all these these fancy interconnects.
+
+655
+00:22:41,679 --> 00:22:44,960
+They are growing, but they're growing
+
+656
+00:22:42,960 --> 00:22:46,720
+somewhat slowly, right? So so this chart
+
+657
+00:22:44,960 --> 00:22:49,120
+is like normalized scaling, you know,
+
+658
+00:22:46,720 --> 00:22:51,559
+bandwidth relative to to when you know
+
+659
+00:22:49,120 --> 00:22:54,159
+the the first generation um of
+
+660
+00:22:51,559 --> 00:22:56,480
+interconnects. The green line, this is
+
+661
+00:22:54,159 --> 00:22:59,039
+the uh global memory speed, right? So
+
+662
+00:22:56,480 --> 00:23:00,559
+you go from GDDR to HBM2E and that's
+
+663
+00:22:59,039 --> 00:23:03,280
+much much faster right this is log scale
+
+664
+00:23:00,559 --> 00:23:05,600
+it's 100x faster um but this is still
+
+665
+00:23:03,280 --> 00:23:08,000
+kind of slow scaling right and the gray
+
+666
+00:23:05,600 --> 00:23:09,440
+line here right this is compute scaling
+
+667
+00:23:08,000 --> 00:23:10,640
+this is the number of floatingoint
+
+668
+00:23:09,440 --> 00:23:12,799
+operations if you're you know
+
+669
+00:23:10,640 --> 00:23:15,120
+considering the map flops this is this
+
+670
+00:23:12,799 --> 00:23:17,039
+is how fast the compute has been scaling
+
+671
+00:23:15,120 --> 00:23:21,280
+and this is astoundingly fast it's like
+
+672
+00:23:17,039 --> 00:23:23,520
+one to 100,000 times faster um and so
+
+673
+00:23:21,280 --> 00:23:25,600
+kind of in the early days of the scaling
+
+674
+00:23:23,520 --> 00:23:26,799
+maybe your problems were flops based
+
+675
+00:23:25,600 --> 00:23:28,200
+right like you you just didn't have
+
+676
+00:23:26,799 --> 00:23:30,080
+enough flops to do your matrix
+
+677
+00:23:28,200 --> 00:23:31,919
+multiplications. But now, you know, all
+
+678
+00:23:30,080 --> 00:23:33,679
+the way to the right with the H100's,
+
+679
+00:23:31,919 --> 00:23:36,320
+you know, these are astoundingly fast
+
+680
+00:23:33,679 --> 00:23:37,600
+GPUs, your bottlenecks are probably
+
+681
+00:23:36,320 --> 00:23:38,880
+going to end up being memory, right?
+
+682
+00:23:37,600 --> 00:23:40,240
+Because the memory is not growing as
+
+683
+00:23:38,880 --> 00:23:42,080
+fast, right? And as we go into the
+
+684
+00:23:40,240 --> 00:23:43,600
+future, you know, this is not really
+
+685
+00:23:42,080 --> 00:23:45,200
+going to change. DRAM is very hard to
+
+686
+00:23:43,600 --> 00:23:46,559
+scale. You're going to keep getting this
+
+687
+00:23:45,200 --> 00:23:47,679
+bigger and bigger gap, right? So, if
+
+688
+00:23:46,559 --> 00:23:49,280
+you're ever designing, you know,
+
+689
+00:23:47,679 --> 00:23:50,320
+hardware efficient algorithms, you're
+
+690
+00:23:49,280 --> 00:23:52,159
+going to have to think more and more
+
+691
+00:23:50,320 --> 00:23:53,520
+about memory, right? And so, we're going
+
+692
+00:23:52,159 --> 00:23:55,280
+to keep a lookout on that. I'm going to
+
+693
+00:23:53,520 --> 00:23:59,760
+keep emphasizing this. It's one of the
+
+694
+00:23:55,280 --> 00:24:01,120
+important themes um in GPUs. Okay, so
+
+695
+00:23:59,760 --> 00:24:03,520
+you know I've been kind of throwing lots
+
+696
+00:24:01,120 --> 00:24:05,520
+of GPU facts at you um especially if you
+
+697
+00:24:03,520 --> 00:24:08,000
+haven't you know seen this recently and
+
+698
+00:24:05,520 --> 00:24:10,960
+maybe kind of new. So just to recap,
+
+699
+00:24:08,000 --> 00:24:12,880
+right, GPUs are these massively parallel
+
+700
+00:24:10,960 --> 00:24:14,720
+processing systems. They have same
+
+701
+00:24:12,880 --> 00:24:16,480
+instructions applied across many
+
+702
+00:24:14,720 --> 00:24:18,000
+different threads and they have these
+
+703
+00:24:16,480 --> 00:24:19,840
+things called SM which are kind of like
+
+704
+00:24:18,000 --> 00:24:22,720
+cores that you know there's many many of
+
+705
+00:24:19,840 --> 00:24:24,480
+them in the GPUs. um compute and and
+
+706
+00:24:22,720 --> 00:24:26,080
+matrix multiplies have scaled really
+
+707
+00:24:24,480 --> 00:24:28,000
+fast and they have scaled faster than
+
+708
+00:24:26,080 --> 00:24:29,760
+memory and that is an important part of
+
+709
+00:24:28,000 --> 00:24:32,960
+the characteristics that you think about
+
+710
+00:24:29,760 --> 00:24:34,320
+about GPUs but there is some fast memory
+
+711
+00:24:32,960 --> 00:24:36,320
+right it's not like everything is slow
+
+712
+00:24:34,320 --> 00:24:38,080
+so there's nothing we can do there's the
+
+713
+00:24:36,320 --> 00:24:40,159
+memory hierarchy right so some kinds of
+
+714
+00:24:38,080 --> 00:24:42,240
+memory are very very fast other kinds of
+
+715
+00:24:40,159 --> 00:24:44,000
+memories are slow and so if we exploit
+
+716
+00:24:42,240 --> 00:24:45,679
+this hierarchy maybe we can get things
+
+717
+00:24:44,000 --> 00:24:47,279
+that are really really fast right so
+
+718
+00:24:45,679 --> 00:24:49,919
+that's kind of things to remember about
+
+719
+00:24:47,279 --> 00:24:51,600
+the GPU and if you remember these facts
+
+720
+00:24:49,919 --> 00:24:53,120
+you know you're going to be able think
+
+721
+00:24:51,600 --> 00:24:54,400
+pretty cleanly about the performance
+
+722
+00:24:53,120 --> 00:24:56,480
+components that I'm going to talk about
+
+723
+00:24:54,400 --> 00:24:59,080
+next. Um, any questions before I I move
+
+724
+00:24:56,480 --> 00:25:02,559
+on to the next
+
+725
+00:24:59,080 --> 00:25:02,559
+part. Okay,
+
+726
+00:25:02,760 --> 00:25:07,919
+cool. So now you all are GPU experts and
+
+727
+00:25:06,559 --> 00:25:09,600
+what we would like to do is we would
+
+728
+00:25:07,919 --> 00:25:13,520
+like to make machine learning workloads
+
+729
+00:25:09,600 --> 00:25:15,200
+go very fast on a GPU. Um, and so I'm
+
+730
+00:25:13,520 --> 00:25:16,960
+going to start with this chart and one
+
+731
+00:25:15,200 --> 00:25:18,720
+of our goals will be to understand what
+
+732
+00:25:16,960 --> 00:25:21,679
+this chart exactly is. I think it'll be
+
+733
+00:25:18,720 --> 00:25:24,000
+a good puzzle to get us motivated. Um,
+
+734
+00:25:21,679 --> 00:25:26,159
+and so here what we are doing is we are
+
+735
+00:25:24,000 --> 00:25:28,320
+multiplying square matrices together,
+
+736
+00:25:26,159 --> 00:25:31,200
+right? So the x-axis is the size of my
+
+737
+00:25:28,320 --> 00:25:33,840
+square matrix multiplies. And you know
+
+738
+00:25:31,200 --> 00:25:35,760
+the y-axis here, this is the number of
+
+739
+00:25:33,840 --> 00:25:37,039
+operations per second that I'm doing. So
+
+740
+00:25:35,760 --> 00:25:39,360
+you can kind of think of this as
+
+741
+00:25:37,039 --> 00:25:41,679
+hardware utilization on the y ais,
+
+742
+00:25:39,360 --> 00:25:43,360
+right? Um, and so as I get bigger and
+
+743
+00:25:41,679 --> 00:25:45,520
+bigger matrices, I'm going to get better
+
+744
+00:25:43,360 --> 00:25:47,919
+and better hardware utilization because,
+
+745
+00:25:45,520 --> 00:25:49,279
+you know, I I have more work to do. So I
+
+746
+00:25:47,919 --> 00:25:51,440
+don't you know that overwhelms the
+
+747
+00:25:49,279 --> 00:25:53,440
+overhead of sort of you know launching
+
+748
+00:25:51,440 --> 00:25:54,799
+jobs and things like this. Um, but
+
+749
+00:25:53,440 --> 00:25:57,200
+there's all these weird things that are
+
+750
+00:25:54,799 --> 00:25:59,120
+happening, right? You see one, two,
+
+751
+00:25:57,200 --> 00:26:01,520
+three different, four different lines,
+
+752
+00:25:59,120 --> 00:26:03,760
+right? And each of these lines are kind
+
+753
+00:26:01,520 --> 00:26:05,919
+of wavy in a way that's kind of, you
+
+754
+00:26:03,760 --> 00:26:07,279
+know, looks very unpredictable, right?
+
+755
+00:26:05,919 --> 00:26:09,279
+Um, and so we would like to kind of
+
+756
+00:26:07,279 --> 00:26:11,200
+understand what exactly is going on uh
+
+757
+00:26:09,279 --> 00:26:13,440
+with these lines. And by the end of this
+
+758
+00:26:11,200 --> 00:26:15,039
+section, um, my promise is that you will
+
+759
+00:26:13,440 --> 00:26:16,320
+kind of understand exactly each one of
+
+760
+00:26:15,039 --> 00:26:18,080
+these phenomenon. You'll be able to say,
+
+761
+00:26:16,320 --> 00:26:19,760
+"Yeah, that plot looks totally normal.
+
+762
+00:26:18,080 --> 00:26:22,000
+That is a natural thing for a GPU to
+
+763
+00:26:19,760 --> 00:26:24,559
+do."
+
+764
+00:26:22,000 --> 00:26:26,400
+Okay, so the very first part, right, is
+
+765
+00:26:24,559 --> 00:26:27,919
+if you look at that plot, you will
+
+766
+00:26:26,400 --> 00:26:29,760
+notice that it looks a little bit like
+
+767
+00:26:27,919 --> 00:26:31,360
+this, right? And if you've taken a
+
+768
+00:26:29,760 --> 00:26:32,559
+systems hardware course, you know, you
+
+769
+00:26:31,360 --> 00:26:35,120
+should you should remember this as kind
+
+770
+00:26:32,559 --> 00:26:36,480
+of the roof line model. Um the roofline
+
+771
+00:26:35,120 --> 00:26:39,360
+model basically says if we're looking
+
+772
+00:26:36,480 --> 00:26:41,120
+at, you know, throughput or utilization,
+
+773
+00:26:39,360 --> 00:26:42,960
+um you know, what we're going to find
+
+774
+00:26:41,120 --> 00:26:44,799
+is, you know, there's two regimes.
+
+775
+00:26:42,960 --> 00:26:46,960
+There's going to be a regime that is
+
+776
+00:26:44,799 --> 00:26:48,720
+sort of memory limited, right? That is
+
+777
+00:26:46,960 --> 00:26:50,640
+on the left side of this curve on the
+
+778
+00:26:48,720 --> 00:26:52,400
+green over here. And then there's a part
+
+779
+00:26:50,640 --> 00:26:53,760
+that is throughput limited on the right
+
+780
+00:26:52,400 --> 00:26:56,080
+side. In some sense you can kind of
+
+781
+00:26:53,760 --> 00:26:58,000
+think of it as on the right side we have
+
+782
+00:26:56,080 --> 00:26:59,840
+we are fully utilizing our compute
+
+783
+00:26:58,000 --> 00:27:02,159
+units. All the matrix multiply units are
+
+784
+00:26:59,840 --> 00:27:04,720
+multiplying all the time. Um and on the
+
+785
+00:27:02,159 --> 00:27:07,679
+diagonal here we just have some sort of
+
+786
+00:27:04,720 --> 00:27:10,720
+memory bottleneck and so our ability to
+
+787
+00:27:07,679 --> 00:27:12,880
+to do computation is limited by kind of
+
+788
+00:27:10,720 --> 00:27:14,400
+the amount of sort of intensity that we
+
+789
+00:27:12,880 --> 00:27:16,320
+have the amount of flops per bite that
+
+790
+00:27:14,400 --> 00:27:18,240
+we have. Right? So we want to avoid
+
+791
+00:27:16,320 --> 00:27:19,760
+being in this left side region where
+
+792
+00:27:18,240 --> 00:27:20,880
+we're memory bound and we would like to
+
+793
+00:27:19,760 --> 00:27:22,799
+be on this right side where we're
+
+794
+00:27:20,880 --> 00:27:24,799
+getting in some sense full utilization
+
+795
+00:27:22,799 --> 00:27:26,799
+of all of our compute units. Right? So
+
+796
+00:27:24,799 --> 00:27:28,960
+that's in some sense the goal and
+
+797
+00:27:26,799 --> 00:27:30,240
+hopefully this roofine model looks
+
+798
+00:27:28,960 --> 00:27:31,600
+something like this. Right? Like we've
+
+799
+00:27:30,240 --> 00:27:33,360
+got sort of this diagonal part and then
+
+800
+00:27:31,600 --> 00:27:37,000
+we've got this flat part all the way at
+
+801
+00:27:33,360 --> 00:27:40,640
+the top here. So that's one part of the
+
+802
+00:27:37,000 --> 00:27:43,120
+mystery. Um and so this is this turns
+
+803
+00:27:40,640 --> 00:27:45,679
+out to be kind of complex, right? Um,
+
+804
+00:27:43,120 --> 00:27:47,760
+the simple way to say this is let's make
+
+805
+00:27:45,679 --> 00:27:49,520
+sure that we're not accessing memory
+
+806
+00:27:47,760 --> 00:27:51,840
+unnecessarily, right? We have as few
+
+807
+00:27:49,520 --> 00:27:54,159
+memory accesses to slow global memory as
+
+808
+00:27:51,840 --> 00:27:56,240
+possible. But it turns out that in order
+
+809
+00:27:54,159 --> 00:27:58,399
+to do that, we need a large array of
+
+810
+00:27:56,240 --> 00:28:00,159
+tricks. Um, there's a lot of different
+
+811
+00:27:58,399 --> 00:28:02,640
+things that you could do that would mess
+
+812
+00:28:00,159 --> 00:28:03,840
+you up, that would make you very slow.
+
+813
+00:28:02,640 --> 00:28:05,679
+And the first one's not a memory
+
+814
+00:28:03,840 --> 00:28:07,039
+bottleneck. I'll just mention it. Um, it
+
+815
+00:28:05,679 --> 00:28:08,159
+doesn't come up too often. we'll get it
+
+816
+00:28:07,039 --> 00:28:10,720
+out of the way and then we'll talk about
+
+817
+00:28:08,159 --> 00:28:13,039
+the remaining uh five items that in some
+
+818
+00:28:10,720 --> 00:28:15,520
+sense are really core to thinking about
+
+819
+00:28:13,039 --> 00:28:15,520
+GPU
+
+820
+00:28:15,880 --> 00:28:20,360
+performance. Okay, so the first thing
+
+821
+00:28:18,880 --> 00:28:22,960
+that I want to talk about is
+
+822
+00:28:20,360 --> 00:28:24,799
+conditionals. Um so as I said before
+
+823
+00:28:22,960 --> 00:28:26,919
+GPUs their execution model is something
+
+824
+00:28:24,799 --> 00:28:29,919
+called SIM key right single instruction
+
+825
+00:28:26,919 --> 00:28:31,679
+multi-thread. Um and so every thread in
+
+826
+00:28:29,919 --> 00:28:34,159
+a warp is going to execute the same
+
+827
+00:28:31,679 --> 00:28:36,159
+instruction um and it's going to do so
+
+828
+00:28:34,159 --> 00:28:38,480
+on different data. And so what happens
+
+829
+00:28:36,159 --> 00:28:40,480
+if I write uh a piece of code that looks
+
+830
+00:28:38,480 --> 00:28:42,000
+like this? I have an if statement and if
+
+831
+00:28:40,480 --> 00:28:43,919
+you know the thread index is less than
+
+832
+00:28:42,000 --> 00:28:45,600
+four do something. If the thread index
+
+833
+00:28:43,919 --> 00:28:46,799
+is greater than or equal to four then do
+
+834
+00:28:45,600 --> 00:28:49,200
+something else. Right? I have this very
+
+835
+00:28:46,799 --> 00:28:51,520
+simple conditional uh model. If I run
+
+836
+00:28:49,200 --> 00:28:56,000
+this on the GPU um what's going to
+
+837
+00:28:51,520 --> 00:28:58,320
+happen is that I'm going to run the a uh
+
+838
+00:28:56,000 --> 00:29:00,320
+instruction on four of my threads. I
+
+839
+00:28:58,320 --> 00:29:01,520
+will actually pause my other four
+
+840
+00:29:00,320 --> 00:29:03,679
+threads which are supposed to be
+
+841
+00:29:01,520 --> 00:29:05,120
+executing the else part. And then these
+
+842
+00:29:03,679 --> 00:29:07,200
+other four threads will come live and
+
+843
+00:29:05,120 --> 00:29:08,720
+they will execute X and these my
+
+844
+00:29:07,200 --> 00:29:10,320
+original four threads will will go to
+
+845
+00:29:08,720 --> 00:29:12,240
+sleep and I will just alternate
+
+846
+00:29:10,320 --> 00:29:14,880
+executing each of these instructions.
+
+847
+00:29:12,240 --> 00:29:17,200
+Why is that? I can't in I can't execute
+
+848
+00:29:14,880 --> 00:29:18,559
+A and X at the same time on these
+
+849
+00:29:17,200 --> 00:29:20,880
+different threads. Right? As I said
+
+850
+00:29:18,559 --> 00:29:22,159
+again um every thread has to execute the
+
+851
+00:29:20,880 --> 00:29:24,880
+same instruction. So conditional
+
+852
+00:29:22,159 --> 00:29:26,799
+statements within a single warp um can
+
+853
+00:29:24,880 --> 00:29:28,640
+be really really damaging because they
+
+854
+00:29:26,799 --> 00:29:30,960
+will force you to pause any of the
+
+855
+00:29:28,640 --> 00:29:35,480
+threads that are not doing exactly the
+
+856
+00:29:30,960 --> 00:29:37,679
+the main sort of control flow uh
+
+857
+00:29:35,480 --> 00:29:39,360
+execution. Okay, so that was the the
+
+858
+00:29:37,679 --> 00:29:40,799
+only non-memory thing that I wanted to
+
+859
+00:29:39,360 --> 00:29:42,240
+mention. Um and it should be kind of
+
+860
+00:29:40,799 --> 00:29:44,240
+obvious that you should probably not be
+
+861
+00:29:42,240 --> 00:29:47,200
+putting conditionals um into sort of
+
+862
+00:29:44,240 --> 00:29:48,640
+your uh massively parallel compute unit.
+
+863
+00:29:47,200 --> 00:29:50,320
+But once we've gotten that out of the
+
+864
+00:29:48,640 --> 00:29:52,320
+way, sort of the other tricks that we
+
+865
+00:29:50,320 --> 00:29:54,720
+need to consider are all kind of memory
+
+866
+00:29:52,320 --> 00:29:57,200
+based. Um the first thing I want to sort
+
+867
+00:29:54,720 --> 00:29:58,720
+of mention is lower precision. And this
+
+868
+00:29:57,200 --> 00:30:01,039
+is a big trick. This is an important
+
+869
+00:29:58,720 --> 00:30:02,559
+trick. You should do it all the time. Um
+
+870
+00:30:01,039 --> 00:30:05,520
+there's kind of a going back to this
+
+871
+00:30:02,559 --> 00:30:08,399
+plot um of of Billy. Um there's a slight
+
+872
+00:30:05,520 --> 00:30:10,240
+of hand here. Um this looks really good
+
+873
+00:30:08,399 --> 00:30:12,080
+because the the numbers are going up and
+
+874
+00:30:10,240 --> 00:30:15,120
+up and up. But if you look at, you know,
+
+875
+00:30:12,080 --> 00:30:17,440
+what's driving GPU progress over all
+
+876
+00:30:15,120 --> 00:30:19,600
+these years, um, you actually kind of
+
+877
+00:30:17,440 --> 00:30:22,960
+see that it's number representations.
+
+878
+00:30:19,600 --> 00:30:25,039
+You go from FP32 to FP16 to intate to to
+
+879
+00:30:22,960 --> 00:30:27,039
+so on, uh, you get many orders of
+
+880
+00:30:25,039 --> 00:30:29,159
+magnitude gains from just having lower
+
+881
+00:30:27,039 --> 00:30:31,840
+and lower precision in your GPU
+
+882
+00:30:29,159 --> 00:30:33,679
+operations. Um, and let me let me sort
+
+883
+00:30:31,840 --> 00:30:35,760
+of clarify why that's so important,
+
+884
+00:30:33,679 --> 00:30:37,039
+right? If you have fewer bits in all the
+
+885
+00:30:35,760 --> 00:30:38,720
+things that you're computing and your
+
+886
+00:30:37,039 --> 00:30:40,399
+weights and so on, you have much fewer
+
+887
+00:30:38,720 --> 00:30:42,640
+bits to move, right? So even if you're
+
+888
+00:30:40,399 --> 00:30:44,760
+accessing these bits from global memory,
+
+889
+00:30:42,640 --> 00:30:47,120
+um they become much much less of a
+
+890
+00:30:44,760 --> 00:30:48,880
+concern. So let's just give a simple
+
+891
+00:30:47,120 --> 00:30:50,880
+example and let's just think about kind
+
+892
+00:30:48,880 --> 00:30:52,480
+of arithmetic intensity of a simple
+
+893
+00:30:50,880 --> 00:30:53,919
+element-wise operation. Right? So I'm
+
+894
+00:30:52,480 --> 00:30:56,240
+going to do it in values. So that's x
+
+895
+00:30:53,919 --> 00:30:58,640
+equals max zero and x and I'm going to
+
+896
+00:30:56,240 --> 00:31:00,320
+do that on a vector of size n. Let's say
+
+897
+00:30:58,640 --> 00:31:02,320
+naively I'm going to do this on float
+
+898
+00:31:00,320 --> 00:31:05,200
+32. Right? So so how many memory
+
+899
+00:31:02,320 --> 00:31:07,360
+accesses do I have? I have to read my x.
+
+900
+00:31:05,200 --> 00:31:09,679
+I have to write the result of if x less
+
+901
+00:31:07,360 --> 00:31:11,840
+than zero. Um and that's all in float
+
+902
+00:31:09,679 --> 00:31:13,840
+32. So that's kind of eight bytes,
+
+903
+00:31:11,840 --> 00:31:15,600
+right? And how many operations do I do?
+
+904
+00:31:13,840 --> 00:31:17,520
+Well, I have to do x less than zero. So
+
+905
+00:31:15,600 --> 00:31:19,520
+that's one comparison operation. And I
+
+906
+00:31:17,520 --> 00:31:21,200
+do one flop, right? So so I do, you
+
+907
+00:31:19,520 --> 00:31:23,520
+know, eight bytes per single
+
+908
+00:31:21,200 --> 00:31:25,600
+floatingoint operation. If I do this in
+
+909
+00:31:23,520 --> 00:31:27,440
+float 16 now, well, you know, I haven't
+
+910
+00:31:25,600 --> 00:31:29,840
+changed the flops intensity here, but
+
+911
+00:31:27,440 --> 00:31:31,440
+I've have the memory access. And so now
+
+912
+00:31:29,840 --> 00:31:33,120
+I have four bytes per flop, right? In
+
+913
+00:31:31,440 --> 00:31:35,120
+some sense, I've like gotten double the
+
+914
+00:31:33,120 --> 00:31:38,240
+memory bandwidth for free, assuming that
+
+915
+00:31:35,120 --> 00:31:40,399
+I can get away with flop 16.
+
+916
+00:31:38,240 --> 00:31:41,840
+And this is a key part of of how a lot
+
+917
+00:31:40,399 --> 00:31:43,360
+of things are designed. Part of the
+
+918
+00:31:41,840 --> 00:31:46,000
+assignment is going to be you're going
+
+919
+00:31:43,360 --> 00:31:47,679
+to, you know, try and and play with uh
+
+920
+00:31:46,000 --> 00:31:50,399
+various like mixed precision or low
+
+921
+00:31:47,679 --> 00:31:52,559
+precision uh training and and other
+
+922
+00:31:50,399 --> 00:31:54,960
+kinds of things. Um and a key part here
+
+923
+00:31:52,559 --> 00:31:56,480
+is that not all the parts of your
+
+924
+00:31:54,960 --> 00:31:58,000
+network and your training algorithm
+
+925
+00:31:56,480 --> 00:32:00,399
+should be put into low precision, right?
+
+926
+00:31:58,000 --> 00:32:03,440
+So let me give you an example of matrix
+
+927
+00:32:00,399 --> 00:32:05,360
+multiplies. So in matrix multiplies that
+
+928
+00:32:03,440 --> 00:32:07,120
+are mixed precision what you would do is
+
+929
+00:32:05,360 --> 00:32:10,000
+you would have you know your inputs be
+
+930
+00:32:07,120 --> 00:32:11,600
+16 bit. So these are low precision. Um
+
+931
+00:32:10,000 --> 00:32:14,480
+and then you're going to do your your
+
+932
+00:32:11,600 --> 00:32:16,000
+multiplication in full 32bit right and
+
+933
+00:32:14,480 --> 00:32:17,760
+that's useful because the intermediate
+
+934
+00:32:16,000 --> 00:32:19,200
+computations as you're like accumulating
+
+935
+00:32:17,760 --> 00:32:21,760
+partial sums you would like that to be
+
+936
+00:32:19,200 --> 00:32:24,799
+in high precision. Um and so you're
+
+937
+00:32:21,760 --> 00:32:26,640
+accumulating this with uh FP32
+
+938
+00:32:24,799 --> 00:32:30,240
+accumulator and then you know your
+
+939
+00:32:26,640 --> 00:32:31,840
+tensor core uh will return a FP32 result
+
+940
+00:32:30,240 --> 00:32:34,559
+um which you can you know downcast if
+
+941
+00:32:31,840 --> 00:32:36,799
+you would like um back into into 16 bit
+
+942
+00:32:34,559 --> 00:32:38,960
+right and so we have our inputs in 16
+
+943
+00:32:36,799 --> 00:32:42,240
+bit but things like the accumulation um
+
+944
+00:32:38,960 --> 00:32:43,760
+we might want to do in 32 right so
+
+945
+00:32:42,240 --> 00:32:46,159
+there's lots of different things there's
+
+946
+00:32:43,760 --> 00:32:47,600
+operations that can use 16- bit storage
+
+947
+00:32:46,159 --> 00:32:49,279
+there's operations that might need more
+
+948
+00:32:47,600 --> 00:32:52,880
+precision so you want to keep it in like
+
+949
+00:32:49,279 --> 00:32:54,559
+either FP32 or FP16. Um, think you might
+
+950
+00:32:52,880 --> 00:32:56,480
+want to have operations that need more
+
+951
+00:32:54,559 --> 00:32:58,000
+range like X functions. If you don't
+
+952
+00:32:56,480 --> 00:33:00,480
+have sort of the dynamic range, they
+
+953
+00:32:58,000 --> 00:33:02,320
+might blow up or zero out. And so you
+
+954
+00:33:00,480 --> 00:33:03,360
+might want to put those in BF-16.
+
+955
+00:33:02,320 --> 00:33:06,000
+There's a lot of sort of careful
+
+956
+00:33:03,360 --> 00:33:07,440
+engineering um that has to happen in
+
+957
+00:33:06,000 --> 00:33:10,159
+order to make sure that you know these
+
+958
+00:33:07,440 --> 00:33:11,440
+these models uh are actually stable when
+
+959
+00:33:10,159 --> 00:33:13,200
+they're being trained with lower
+
+960
+00:33:11,440 --> 00:33:14,559
+precision. But if you can do it, that's
+
+961
+00:33:13,200 --> 00:33:16,000
+really great because you've basically
+
+962
+00:33:14,559 --> 00:33:18,320
+doubled the throughput of your
+
+963
+00:33:16,000 --> 00:33:21,600
+bottleneck going from 32 to 16 bit,
+
+964
+00:33:18,320 --> 00:33:21,600
+right? if your if your memory is your
+
+965
+00:33:23,159 --> 00:33:27,760
+bottleneck. Okay, the other one and I
+
+966
+00:33:26,320 --> 00:33:29,600
+think this is kind of what a lot of
+
+967
+00:33:27,760 --> 00:33:30,880
+people think of when they say like I'm
+
+968
+00:33:29,600 --> 00:33:33,440
+going to write a CUDA kernel or
+
+969
+00:33:30,880 --> 00:33:36,320
+something. Um, operator fusion is kind
+
+970
+00:33:33,440 --> 00:33:38,880
+of both very intuitive and both a like a
+
+971
+00:33:36,320 --> 00:33:41,120
+fun natural one to think about. So, one
+
+972
+00:33:38,880 --> 00:33:43,679
+memory or sorry, one mental model of how
+
+973
+00:33:41,120 --> 00:33:46,399
+a GPU works and how memory works is is
+
+974
+00:33:43,679 --> 00:33:48,240
+this kind of fun diagram of a factory um
+
+975
+00:33:46,399 --> 00:33:49,919
+from Horus Heath, right? So imagine you
+
+976
+00:33:48,240 --> 00:33:52,080
+have a factory and your factory is your
+
+977
+00:33:49,919 --> 00:33:54,960
+compute part, right? And so you know it
+
+978
+00:33:52,080 --> 00:33:57,679
+takes in little uh box widgets and then
+
+979
+00:33:54,960 --> 00:33:59,760
+outputs little triangle widgets. Um and
+
+980
+00:33:57,679 --> 00:34:01,760
+if you grow your compute but your belt
+
+981
+00:33:59,760 --> 00:34:04,080
+conveyor, you know that takes memory to
+
+982
+00:34:01,760 --> 00:34:05,120
+compute is, you know, finite bandwidth,
+
+983
+00:34:04,080 --> 00:34:06,640
+you know, you're not going to be able to
+
+984
+00:34:05,120 --> 00:34:08,320
+use your second factory, right? Like
+
+985
+00:34:06,640 --> 00:34:10,399
+you're still capped by the speed at
+
+986
+00:34:08,320 --> 00:34:12,079
+which you can transfer things um from
+
+987
+00:34:10,399 --> 00:34:14,320
+memory to compute. And so you've got
+
+988
+00:34:12,079 --> 00:34:15,839
+this this bottleneck. Now, of course,
+
+989
+00:34:14,320 --> 00:34:17,359
+you already knew that, right? I've been
+
+990
+00:34:15,839 --> 00:34:19,200
+sort of hammering in the the memory
+
+991
+00:34:17,359 --> 00:34:21,280
+bottleneck thing. But I think one
+
+992
+00:34:19,200 --> 00:34:23,040
+insidious way in which you can uh incur
+
+993
+00:34:21,280 --> 00:34:25,280
+a ton of overhead without really
+
+994
+00:34:23,040 --> 00:34:27,760
+realizing it is kind of this left-hand
+
+995
+00:34:25,280 --> 00:34:29,599
+side computation pattern, right? So, you
+
+996
+00:34:27,760 --> 00:34:31,679
+know, imagine the left side of this this
+
+997
+00:34:29,599 --> 00:34:33,919
+plot is where the memory is. The right
+
+998
+00:34:31,679 --> 00:34:35,440
+side is your compute unit. Um and so to
+
+999
+00:34:33,919 --> 00:34:37,599
+do computation, I start with a square
+
+1000
+00:34:35,440 --> 00:34:39,520
+and I move my squares from my memory to
+
+1001
+00:34:37,599 --> 00:34:41,280
+my compute. I do some operation. I turn
+
+1002
+00:34:39,520 --> 00:34:43,280
+them into triangles. Right? Now, I ship
+
+1003
+00:34:41,280 --> 00:34:44,720
+my triangles back to memory. And then
+
+1004
+00:34:43,280 --> 00:34:46,079
+you know, okay, I realize I need a
+
+1005
+00:34:44,720 --> 00:34:47,679
+triangles again. So I ship them back
+
+1006
+00:34:46,079 --> 00:34:49,200
+into the compute unit. Now the triangles
+
+1007
+00:34:47,679 --> 00:34:51,119
+become circles and then so on and so
+
+1008
+00:34:49,200 --> 00:34:52,720
+forth, right? I send my compute sort of
+
+1009
+00:34:51,119 --> 00:34:54,560
+back and forth and back and forth back
+
+1010
+00:34:52,720 --> 00:34:56,720
+to memory. And you might call this kind
+
+1011
+00:34:54,560 --> 00:34:58,800
+of a very naive approach. And if you
+
+1012
+00:34:56,720 --> 00:35:00,720
+were just doing operations naively on
+
+1013
+00:34:58,800 --> 00:35:02,320
+the GPU and just shipping the results
+
+1014
+00:35:00,720 --> 00:35:04,000
+straight back to global memory, this is
+
+1015
+00:35:02,320 --> 00:35:05,599
+what you'd end up with, right? And if
+
+1016
+00:35:04,000 --> 00:35:06,960
+you count the number of times a piece of
+
+1017
+00:35:05,599 --> 00:35:08,400
+data went back and forth, this is this
+
+1018
+00:35:06,960 --> 00:35:11,359
+is pretty terrible. You've incurred tons
+
+1019
+00:35:08,400 --> 00:35:12,800
+of memory overhead. Now uh you should be
+
+1020
+00:35:11,359 --> 00:35:14,800
+able to realize that if you look at the
+
+1021
+00:35:12,800 --> 00:35:16,320
+right side well this compute well
+
+1022
+00:35:14,800 --> 00:35:18,240
+there's no dependency so I should be
+
+1023
+00:35:16,320 --> 00:35:21,040
+able to go square to triangle to circle
+
+1024
+00:35:18,240 --> 00:35:22,400
+to to rectangle and ship the rectangle
+
+1025
+00:35:21,040 --> 00:35:24,320
+back right I can just keep everything in
+
+1026
+00:35:22,400 --> 00:35:26,160
+the compute unit the whole time right
+
+1027
+00:35:24,320 --> 00:35:27,920
+and that's the right hand side diagram
+
+1028
+00:35:26,160 --> 00:35:29,040
+and this is the mental model of a fused
+
+1029
+00:35:27,920 --> 00:35:31,200
+kernel right you have a bunch of
+
+1030
+00:35:29,040 --> 00:35:33,520
+operations that are going to happen on a
+
+1031
+00:35:31,200 --> 00:35:35,440
+piece of data in sequence instead of
+
+1032
+00:35:33,520 --> 00:35:36,720
+writing it back into storage what I'm
+
+1033
+00:35:35,440 --> 00:35:38,400
+going to do is I'm going to do all the
+
+1034
+00:35:36,720 --> 00:35:40,720
+computation as much as I can in one
+
+1035
+00:35:38,400 --> 00:35:42,720
+place and then only when I have to ship
+
+1036
+00:35:40,720 --> 00:35:45,599
+it back to memory. Right? So that's this
+
+1037
+00:35:42,720 --> 00:35:45,599
+idea of of kernel
+
+1038
+00:35:46,599 --> 00:35:52,240
+fusion. Okay. Um there's some very
+
+1039
+00:35:49,680 --> 00:35:55,040
+simple examples of how if you write some
+
+1040
+00:35:52,240 --> 00:35:56,640
+naive code um you might you know get
+
+1041
+00:35:55,040 --> 00:35:58,960
+sort of a naive set of launches. So
+
+1042
+00:35:56,640 --> 00:36:01,040
+here's an example. Um I wrote a little
+
+1043
+00:35:58,960 --> 00:36:02,240
+let's say neural network module. um you
+
+1044
+00:36:01,040 --> 00:36:04,960
+know let's say let's say I write a
+
+1045
+00:36:02,240 --> 00:36:07,119
+neural network module that takes in uh s
+
+1046
+00:36:04,960 --> 00:36:10,480
+x and it produces sin^ squar x and
+
+1047
+00:36:07,119 --> 00:36:12,800
+cosine^ squ x right simple code now if I
+
+1048
+00:36:10,480 --> 00:36:14,400
+run this you know the computation graph
+
+1049
+00:36:12,800 --> 00:36:16,240
+in pietorch is going to look something
+
+1050
+00:36:14,400 --> 00:36:17,920
+like this and it's going to you know
+
+1051
+00:36:16,240 --> 00:36:19,920
+launch a whole bunch of cuda kernels
+
+1052
+00:36:17,920 --> 00:36:22,000
+it's going to launch take in the x and
+
+1053
+00:36:19,920 --> 00:36:23,599
+it'll it'll launch a cuda kernel to
+
+1054
+00:36:22,000 --> 00:36:25,599
+compute sin x it'll launch one to
+
+1055
+00:36:23,599 --> 00:36:27,599
+compute cosine x then sin square of x
+
+1056
+00:36:25,599 --> 00:36:29,359
+and cosine square of x and sin^ square x
+
+1057
+00:36:27,599 --> 00:36:30,960
+plus cosine square of x right so there's
+
+1058
+00:36:29,359 --> 00:36:32,640
+a bunch of back and forth that has to
+
+1059
+00:36:30,960 --> 00:36:34,560
+happen in order to do this computation.
+
+1060
+00:36:32,640 --> 00:36:36,760
+It's exactly the lefth hand side figure
+
+1061
+00:36:34,560 --> 00:36:39,599
+uh that I showed you
+
+1062
+00:36:36,760 --> 00:36:41,280
+before. Um but if you were a little
+
+1063
+00:36:39,599 --> 00:36:42,800
+smarter, right, and you either wrote
+
+1064
+00:36:41,280 --> 00:36:45,280
+your own CUDA kernel or you use
+
+1065
+00:36:42,800 --> 00:36:47,200
+something like torch compile, um well,
+
+1066
+00:36:45,280 --> 00:36:49,680
+you can easily realize that those five
+
+1067
+00:36:47,200 --> 00:36:51,680
+operations um don't really depend on
+
+1068
+00:36:49,680 --> 00:36:53,520
+very much like they they use only a
+
+1069
+00:36:51,680 --> 00:36:55,440
+little bit of memory. And so you can
+
+1070
+00:36:53,520 --> 00:36:57,359
+fuse them into a single operation that
+
+1071
+00:36:55,440 --> 00:36:59,040
+does everything on GPU on a single
+
+1072
+00:36:57,359 --> 00:37:02,079
+thread without sending things back to
+
+1073
+00:36:59,040 --> 00:37:03,839
+global memory. Right? So um really easy
+
+1074
+00:37:02,079 --> 00:37:05,440
+fusion operations like this can be done
+
+1075
+00:37:03,839 --> 00:37:07,760
+automatically by compilers. I just
+
+1076
+00:37:05,440 --> 00:37:09,119
+mentioned torch compile. Um if you
+
+1077
+00:37:07,760 --> 00:37:10,400
+aren't already doing this, you know, you
+
+1078
+00:37:09,119 --> 00:37:11,839
+should you should consider strongly
+
+1079
+00:37:10,400 --> 00:37:13,520
+thinking about using torch compile
+
+1080
+00:37:11,839 --> 00:37:15,839
+everywhere. Um we'll show you in the
+
+1081
+00:37:13,520 --> 00:37:21,520
+assignment um torch compile as well.
+
+1082
+00:37:15,839 --> 00:37:24,160
+It's it's pretty uh nice. Okay. Um, so
+
+1083
+00:37:21,520 --> 00:37:26,400
+I've gone through uh precision and
+
+1084
+00:37:24,160 --> 00:37:28,000
+fusion. If anyone has questions, let me
+
+1085
+00:37:26,400 --> 00:37:29,920
+know uh before I move on to to
+
+1086
+00:37:28,000 --> 00:37:32,680
+recomputation um and other kinds of
+
+1087
+00:37:29,920 --> 00:37:34,760
+tricks that we can do on the
+
+1088
+00:37:32,680 --> 00:37:37,839
+GPU. Okay,
+
+1089
+00:37:34,760 --> 00:37:40,079
+good. So another thing that we can do is
+
+1090
+00:37:37,839 --> 00:37:42,720
+called recomputation. Um and
+
+1091
+00:37:40,079 --> 00:37:45,520
+recomputation is this idea of sort of
+
+1092
+00:37:42,720 --> 00:37:48,480
+spending more compute to uh avoid having
+
+1093
+00:37:45,520 --> 00:37:50,640
+to do memory access, right? Um, so
+
+1094
+00:37:48,480 --> 00:37:52,240
+remember back your, you know, original
+
+1095
+00:37:50,640 --> 00:37:54,800
+back propagation lecture. This one's
+
+1096
+00:37:52,240 --> 00:37:56,640
+actually from CS221. Um, what do we do?
+
+1097
+00:37:54,800 --> 00:37:58,320
+Well, we take our our inputs at the very
+
+1098
+00:37:56,640 --> 00:38:00,160
+bottom. These are the yellow ones. Um,
+
+1099
+00:37:58,320 --> 00:38:01,680
+and then we propagate activations
+
+1100
+00:38:00,160 --> 00:38:03,839
+upwards. Those are also the yellow
+
+1101
+00:38:01,680 --> 00:38:05,520
+values on the on the tree. Um, and then
+
+1102
+00:38:03,839 --> 00:38:07,760
+we compute the Jacobians backwards.
+
+1103
+00:38:05,520 --> 00:38:09,359
+Those are the green values on the edges.
+
+1104
+00:38:07,760 --> 00:38:11,680
+And then to compute my gradients, I'm
+
+1105
+00:38:09,359 --> 00:38:13,839
+going to propagate you multiply sort of
+
+1106
+00:38:11,680 --> 00:38:15,520
+the Jacobian and the activations. I'm
+
+1107
+00:38:13,839 --> 00:38:17,760
+going to propagate the the gradients
+
+1108
+00:38:15,520 --> 00:38:20,480
+backward, right? Um, well, if you think
+
+1109
+00:38:17,760 --> 00:38:22,480
+about it, those yellow values after the
+
+1110
+00:38:20,480 --> 00:38:23,920
+forward pass have to be stored, right?
+
+1111
+00:38:22,480 --> 00:38:25,359
+And then they're stored and then they
+
+1112
+00:38:23,920 --> 00:38:27,040
+have to be taken from global memory
+
+1113
+00:38:25,359 --> 00:38:28,480
+where I stored them and put them into
+
+1114
+00:38:27,040 --> 00:38:30,880
+the compute units, right? Mechanically,
+
+1115
+00:38:28,480 --> 00:38:33,359
+that's how it has to happen. Um, but
+
+1116
+00:38:30,880 --> 00:38:35,160
+that might actually be a ton of sort of
+
+1117
+00:38:33,359 --> 00:38:37,920
+memory inputs and outputs
+
+1118
+00:38:35,160 --> 00:38:40,240
+happening. Instead, you might actually
+
+1119
+00:38:37,920 --> 00:38:42,240
+be able to avoid this. So, let me give
+
+1120
+00:38:40,240 --> 00:38:44,640
+you an example of how recomputation can
+
+1121
+00:38:42,240 --> 00:38:47,200
+speed things up. Um, here's another sort
+
+1122
+00:38:44,640 --> 00:38:49,040
+of silly uh function that I might write.
+
+1123
+00:38:47,200 --> 00:38:50,480
+I'm just going to stack three sigmoids
+
+1124
+00:38:49,040 --> 00:38:51,680
+on top of each other, right? You can
+
+1125
+00:38:50,480 --> 00:38:53,839
+look at the left. That's the forward
+
+1126
+00:38:51,680 --> 00:38:55,200
+graph. Um, that should be exactly, you
+
+1127
+00:38:53,839 --> 00:38:58,079
+know, your mental model of three
+
+1128
+00:38:55,200 --> 00:38:59,520
+sigmoids on top of each other. Now, you
+
+1129
+00:38:58,079 --> 00:39:00,960
+know, the the computation graph for
+
+1130
+00:38:59,520 --> 00:39:02,960
+this, I'm going to compute the sigmoids
+
+1131
+00:39:00,960 --> 00:39:04,640
+and I'm going to store S1 and S2, which
+
+1132
+00:39:02,960 --> 00:39:07,200
+are the activations of the sigmoids, and
+
+1133
+00:39:04,640 --> 00:39:09,599
+I have my outputs. Um, and then, you
+
+1134
+00:39:07,200 --> 00:39:11,359
+know, that's my sort of forward pass.
+
+1135
+00:39:09,599 --> 00:39:13,200
+Now, the backward pass in this is kind
+
+1136
+00:39:11,359 --> 00:39:16,079
+of terrible. when I do my backward
+
+1137
+00:39:13,200 --> 00:39:17,839
+graph, I need to go and take S1 and S2
+
+1138
+00:39:16,079 --> 00:39:19,599
+um and I need to take you know the the
+
+1139
+00:39:17,839 --> 00:39:22,160
+gradients coming sort of backwards into
+
+1140
+00:39:19,599 --> 00:39:23,760
+this out box um and then push it into
+
+1141
+00:39:22,160 --> 00:39:26,160
+this you know backwards computation and
+
+1142
+00:39:23,760 --> 00:39:28,720
+I'll get the gradient of X right so I
+
+1143
+00:39:26,160 --> 00:39:30,240
+need to have three memory reads one
+
+1144
+00:39:28,720 --> 00:39:31,920
+memory right in order to compute the
+
+1145
+00:39:30,240 --> 00:39:34,000
+backwards pass and then for the forward
+
+1146
+00:39:31,920 --> 00:39:35,839
+pass I need to do one memory read of X
+
+1147
+00:39:34,000 --> 00:39:38,320
+and I need to do three memory rights for
+
+1148
+00:39:35,839 --> 00:39:40,240
+S1 S2 and out right so hopefully that's
+
+1149
+00:39:38,320 --> 00:39:42,240
+clear this is you know a decent amount
+
+1150
+00:39:40,240 --> 00:39:43,920
+of of uh memory reads and writes have to
+
+1151
+00:39:42,240 --> 00:39:45,520
+do eight of them and I have very low
+
+1152
+00:39:43,920 --> 00:39:47,960
+arithmetic intensity because I have no
+
+1153
+00:39:45,520 --> 00:39:50,960
+matrix multiplies um at
+
+1154
+00:39:47,960 --> 00:39:52,960
+all. So the idea of recomputation is to
+
+1155
+00:39:50,960 --> 00:39:54,560
+say I don't want to store those
+
+1156
+00:39:52,960 --> 00:39:56,240
+activations at all. Right? Like I'm not
+
+1157
+00:39:54,560 --> 00:39:57,920
+going to put them into memory. I'm just
+
+1158
+00:39:56,240 --> 00:40:00,640
+going to recmp compute them on the fly
+
+1159
+00:39:57,920 --> 00:40:02,400
+in my backward pass. Right? So now in my
+
+1160
+00:40:00,640 --> 00:40:05,200
+new forward pass I don't store S1 and
+
+1161
+00:40:02,400 --> 00:40:07,040
+S2. I take X as input. I compute my
+
+1162
+00:40:05,200 --> 00:40:09,040
+sigmoids and I get my output. Right? So
+
+1163
+00:40:07,040 --> 00:40:11,760
+now that's one memory read for X, one
+
+1164
+00:40:09,040 --> 00:40:13,440
+memory right for out. Right? Um, now in
+
+1165
+00:40:11,760 --> 00:40:15,440
+my backward pass, right, I don't have
+
+1166
+00:40:13,440 --> 00:40:17,680
+activations anymore. So what I'm going
+
+1167
+00:40:15,440 --> 00:40:19,200
+to do is I'm going to get both D out,
+
+1168
+00:40:17,680 --> 00:40:21,440
+which is, you know, the backward signal
+
+1169
+00:40:19,200 --> 00:40:22,640
+coming in from above. Um, and then X,
+
+1170
+00:40:21,440 --> 00:40:24,079
+which is my input, right? So I'm going
+
+1171
+00:40:22,640 --> 00:40:26,800
+to take two of those, which is two
+
+1172
+00:40:24,079 --> 00:40:29,520
+memory reads. Um, and then sort of on
+
+1173
+00:40:26,800 --> 00:40:31,599
+the fly in my SM in my local memory, I'm
+
+1174
+00:40:29,520 --> 00:40:32,720
+going to compute each of these sigmoids,
+
+1175
+00:40:31,599 --> 00:40:33,839
+and I'm going to put them into the
+
+1176
+00:40:32,720 --> 00:40:36,720
+backward graph, right? I'm going to
+
+1177
+00:40:33,839 --> 00:40:38,960
+recmp compute S1, S2, uh, and out on the
+
+1178
+00:40:36,720 --> 00:40:40,880
+fly inside sort of my local memory. Um
+
+1179
+00:40:38,960 --> 00:40:43,599
+and because I do that there's no global
+
+1180
+00:40:40,880 --> 00:40:45,359
+memory reads happening here. Um and then
+
+1181
+00:40:43,599 --> 00:40:47,599
+I have one memory right which is dx.
+
+1182
+00:40:45,359 --> 00:40:50,400
+Right? So now if you compare the two um
+
+1183
+00:40:47,599 --> 00:40:52,079
+I have 5/8 of the memory access for the
+
+1184
+00:40:50,400 --> 00:40:53,920
+exact same computation. Right? The price
+
+1185
+00:40:52,079 --> 00:40:56,160
+that we paid is that I'm going to have
+
+1186
+00:40:53,920 --> 00:40:58,079
+to recomputee these three sigmoids. But
+
+1187
+00:40:56,160 --> 00:41:00,400
+if you were running sort of idle anyway
+
+1188
+00:40:58,079 --> 00:41:01,920
+because you were memory capped, this is
+
+1189
+00:41:00,400 --> 00:41:03,119
+a a great trade-off, right? Like you
+
+1190
+00:41:01,920 --> 00:41:04,720
+would be very happy with this because
+
+1191
+00:41:03,119 --> 00:41:07,119
+now you've traded compute which you have
+
+1192
+00:41:04,720 --> 00:41:08,480
+too much of for memory bandwidth which
+
+1193
+00:41:07,119 --> 00:41:11,440
+you had too little of. Right? Right. So
+
+1194
+00:41:08,480 --> 00:41:13,599
+this is one great way of trading um one
+
+1195
+00:41:11,440 --> 00:41:14,920
+thing you need for another thing uh that
+
+1196
+00:41:13,599 --> 00:41:17,599
+you
+
+1197
+00:41:14,920 --> 00:41:20,160
+have. And of course this is different uh
+
+1198
+00:41:17,599 --> 00:41:21,599
+it's the same trick as um sort of
+
+1199
+00:41:20,160 --> 00:41:23,359
+gradient checkpointing and recmp
+
+1200
+00:41:21,599 --> 00:41:25,200
+computing activations for memory
+
+1201
+00:41:23,359 --> 00:41:27,040
+savings. Um but this is being done for
+
+1202
+00:41:25,200 --> 00:41:28,800
+different reasons. This is for uh sort
+
+1203
+00:41:27,040 --> 00:41:30,240
+of execution speed not just because
+
+1204
+00:41:28,800 --> 00:41:31,680
+you're running out of memory. Right? So
+
+1205
+00:41:30,240 --> 00:41:33,920
+it's it's the same technique but for
+
+1206
+00:41:31,680 --> 00:41:33,920
+different
+
+1207
+00:41:34,280 --> 00:41:39,839
+goals. Okay. And then this one I think
+
+1208
+00:41:37,839 --> 00:41:41,359
+um is actually kind of a really
+
+1209
+00:41:39,839 --> 00:41:42,720
+interesting one and and not one that I
+
+1210
+00:41:41,359 --> 00:41:44,400
+knew until I started sort of really
+
+1211
+00:41:42,720 --> 00:41:48,200
+looking into how the hardware model of a
+
+1212
+00:41:44,400 --> 00:41:51,280
+GPU uh and DRAM works. Um,
+
+1213
+00:41:48,200 --> 00:41:54,480
+so the slow memory, the global memory
+
+1214
+00:41:51,280 --> 00:41:56,880
+called DRAM in a GPU, um, that's
+
+1215
+00:41:54,480 --> 00:41:58,800
+actually very very slow. And in order to
+
+1216
+00:41:56,880 --> 00:42:00,560
+to make it faster, there's certain
+
+1217
+00:41:58,800 --> 00:42:02,240
+optimizations that are being done at the
+
+1218
+00:42:00,560 --> 00:42:04,000
+hardware level. And one of the
+
+1219
+00:42:02,240 --> 00:42:06,319
+optimizations that's done at a hardware
+
+1220
+00:42:04,000 --> 00:42:08,319
+level for for DRAM is that when you go
+
+1221
+00:42:06,319 --> 00:42:10,560
+and read a piece of memory, you don't
+
+1222
+00:42:08,319 --> 00:42:12,960
+actually get just that value back. You
+
+1223
+00:42:10,560 --> 00:42:14,800
+actually get a whole chunk of the memory
+
+1224
+00:42:12,960 --> 00:42:17,520
+back. Um, and this is called burst mode.
+
+1225
+00:42:14,800 --> 00:42:19,760
+So um let's say I went on and uh tried
+
+1226
+00:42:17,520 --> 00:42:21,920
+to read the very first value of this big
+
+1227
+00:42:19,760 --> 00:42:23,839
+memory block, right? Instead of just the
+
+1228
+00:42:21,920 --> 00:42:26,079
+memory giving me back zero, it would
+
+1229
+00:42:23,839 --> 00:42:27,520
+actually give me back 012 3, right? It
+
+1230
+00:42:26,079 --> 00:42:28,880
+would give me back four values at once.
+
+1231
+00:42:27,520 --> 00:42:30,319
+It'll be like here you go. You know, I'm
+
+1232
+00:42:28,880 --> 00:42:32,800
+sure you'll need the one, two, and three
+
+1233
+00:42:30,319 --> 00:42:34,480
+too in the future. Um and so each
+
+1234
+00:42:32,800 --> 00:42:36,079
+address space is cut up into what's
+
+1235
+00:42:34,480 --> 00:42:38,240
+called burst sections. And then you're
+
+1236
+00:42:36,079 --> 00:42:40,640
+given the entire burst section rather
+
+1237
+00:42:38,240 --> 00:42:42,720
+than just what you looked for.
+
+1238
+00:42:40,640 --> 00:42:44,640
+And this might seem very mystifying like
+
+1239
+00:42:42,720 --> 00:42:47,200
+why would the memory give you three
+
+1240
+00:42:44,640 --> 00:42:49,440
+extra, you know, bytes for free uh when
+
+1241
+00:42:47,200 --> 00:42:51,200
+you're just asking for one. Um there's
+
+1242
+00:42:49,440 --> 00:42:52,560
+sort of like a very interesting hardware
+
+1243
+00:42:51,200 --> 00:42:54,480
+reason which is that when you're
+
+1244
+00:42:52,560 --> 00:42:56,160
+addressing into the memory, you know, in
+
+1245
+00:42:54,480 --> 00:42:58,240
+order to send the signal out from the
+
+1246
+00:42:56,160 --> 00:43:00,160
+memory that those bytes have to be moved
+
+1247
+00:42:58,240 --> 00:43:01,680
+to an amplifier. That's the slow step.
+
+1248
+00:43:00,160 --> 00:43:04,079
+And once you've done that, you can get
+
+1249
+00:43:01,680 --> 00:43:05,359
+many many bytes for free. And so that's
+
+1250
+00:43:04,079 --> 00:43:07,440
+why sort of this burst section thing
+
+1251
+00:43:05,359 --> 00:43:09,520
+exists. it's kind of masking this more
+
+1252
+00:43:07,440 --> 00:43:12,920
+expensive step of actually moving where
+
+1253
+00:43:09,520 --> 00:43:16,240
+the the data is stored to this
+
+1254
+00:43:12,920 --> 00:43:18,079
+amplifier but kind of regardless um this
+
+1255
+00:43:16,240 --> 00:43:19,839
+kind of means that we might be able to
+
+1256
+00:43:18,079 --> 00:43:22,000
+significantly accelerate sort of our
+
+1257
+00:43:19,839 --> 00:43:24,480
+memory access if the pattern of memory
+
+1258
+00:43:22,000 --> 00:43:27,119
+access is good right so if I want to
+
+1259
+00:43:24,480 --> 00:43:29,520
+read um this entire you know block over
+
+1260
+00:43:27,119 --> 00:43:31,599
+here if I access it in random order
+
+1261
+00:43:29,520 --> 00:43:34,079
+right then I'm going to have to you know
+
+1262
+00:43:31,599 --> 00:43:37,680
+basically query uh a number of times
+
+1263
+00:43:34,079 --> 00:43:40,000
+equal roughly to the length of my query.
+
+1264
+00:43:37,680 --> 00:43:42,079
+Right? But if I sort of go and I check
+
+1265
+00:43:40,000 --> 00:43:43,920
+the very first value, then I'm going to
+
+1266
+00:43:42,079 --> 00:43:45,359
+get all this entire burst section at
+
+1267
+00:43:43,920 --> 00:43:46,960
+once. And then if I go and check number
+
+1268
+00:43:45,359 --> 00:43:49,440
+four, I'll get this burst section, the
+
+1269
+00:43:46,960 --> 00:43:51,680
+second burst section at once. And so I
+
+1270
+00:43:49,440 --> 00:43:53,200
+can, you know, uh, basically get four
+
+1271
+00:43:51,680 --> 00:43:55,920
+times the throughput if I'm really
+
+1272
+00:43:53,200 --> 00:43:58,319
+clever about my memory accesses and only
+
+1273
+00:43:55,920 --> 00:44:00,880
+access just the bits I need from each
+
+1274
+00:43:58,319 --> 00:44:04,240
+uh, burst section. So this is called
+
+1275
+00:44:00,880 --> 00:44:06,319
+memory coallesing. So if all the threads
+
+1276
+00:44:04,240 --> 00:44:09,040
+uh in in a warp fall within the same
+
+1277
+00:44:06,319 --> 00:44:10,800
+burst um then basically the sort of
+
+1278
+00:44:09,040 --> 00:44:12,319
+smart hardware and programming model
+
+1279
+00:44:10,800 --> 00:44:14,720
+will basically group those queries.
+
+1280
+00:44:12,319 --> 00:44:16,800
+instead of querying 0 1 2 3 it will
+
+1281
+00:44:14,720 --> 00:44:18,560
+group them and say just give me zero and
+
+1282
+00:44:16,800 --> 00:44:21,040
+then I will be able to read out all the
+
+1283
+00:44:18,560 --> 00:44:24,079
+0 1 2 3 at once from this kind of burst
+
+1284
+00:44:21,040 --> 00:44:25,920
+mode uh DRAM right so remember that you
+
+1285
+00:44:24,079 --> 00:44:28,160
+know a warp is 32 sort of numbered
+
+1286
+00:44:25,920 --> 00:44:30,000
+threads and so memory accesses from a
+
+1287
+00:44:28,160 --> 00:44:31,839
+warp happen together and so when these
+
+1288
+00:44:30,000 --> 00:44:33,680
+warps are reading in to these kind of
+
+1289
+00:44:31,839 --> 00:44:35,599
+burst sections there's optimizations
+
+1290
+00:44:33,680 --> 00:44:37,520
+that can be done so that you're getting
+
+1291
+00:44:35,599 --> 00:44:38,560
+all four bytes at once rather than
+
+1292
+00:44:37,520 --> 00:44:41,040
+getting one of them at a time
+
+1293
+00:44:38,560 --> 00:44:43,119
+individually and so that will 4x uh the
+
+1294
+00:44:41,040 --> 00:44:45,280
+throughput that you have on your memory.
+
+1295
+00:44:43,119 --> 00:44:46,400
+Right? So these are kind of very simple
+
+1296
+00:44:45,280 --> 00:44:48,880
+things, but they're actually very
+
+1297
+00:44:46,400 --> 00:44:50,960
+important. Like imagine I'm going to do
+
+1298
+00:44:48,880 --> 00:44:52,079
+matrix multiplications, right? This is a
+
+1299
+00:44:50,960 --> 00:44:53,920
+core thing that you're going to have to
+
+1300
+00:44:52,079 --> 00:44:56,000
+do a ton if you were to sort of
+
+1301
+00:44:53,920 --> 00:44:58,720
+implement, let's say, uh neural network
+
+1302
+00:44:56,000 --> 00:45:01,680
+really from scratch in CUDA. Um in this
+
+1303
+00:44:58,720 --> 00:45:03,760
+case, imagine I'm going to read my my uh
+
+1304
+00:45:01,680 --> 00:45:06,000
+matrices in one of two ways. I can read
+
+1305
+00:45:03,760 --> 00:45:07,440
+it by traversing the rows, right? So
+
+1306
+00:45:06,000 --> 00:45:10,560
+each thread is going to traverse the
+
+1307
+00:45:07,440 --> 00:45:12,400
+row. Or I can sort of read it in sort of
+
+1308
+00:45:10,560 --> 00:45:15,280
+column order. So each thread is going to
+
+1309
+00:45:12,400 --> 00:45:17,119
+go down a column, right? Um turns out
+
+1310
+00:45:15,280 --> 00:45:18,800
+that this left one where you're sort of
+
+1311
+00:45:17,119 --> 00:45:20,720
+going across different rows, so each
+
+1312
+00:45:18,800 --> 00:45:22,720
+thread is accessing a different Oh,
+
+1313
+00:45:20,720 --> 00:45:25,599
+sorry, each thread is going through
+
+1314
+00:45:22,720 --> 00:45:28,240
+columns. This left model is going to be
+
+1315
+00:45:25,599 --> 00:45:30,560
+quite slow. Um because the memory reads
+
+1316
+00:45:28,240 --> 00:45:32,480
+are not going to be coalesed. Um whereas
+
+1317
+00:45:30,560 --> 00:45:34,160
+if you're going to this right side where
+
+1318
+00:45:32,480 --> 00:45:36,160
+each of the threads are going down, so
+
+1319
+00:45:34,160 --> 00:45:38,240
+they're they're incrementing in rows,
+
+1320
+00:45:36,160 --> 00:45:40,400
+then these memory reads will be
+
+1321
+00:45:38,240 --> 00:45:41,839
+coalesed. Um and so you know you can
+
+1322
+00:45:40,400 --> 00:45:43,520
+think about it for a moment why this is
+
+1323
+00:45:41,839 --> 00:45:44,960
+true. Um when I first looked at this
+
+1324
+00:45:43,520 --> 00:45:46,480
+diagram I was like isn't it reversed?
+
+1325
+00:45:44,960 --> 00:45:48,960
+It's actually not. This is this is the
+
+1326
+00:45:46,480 --> 00:45:52,720
+correct one. Um and the way to think
+
+1327
+00:45:48,960 --> 00:45:55,119
+about this right um is let's say uh on
+
+1328
+00:45:52,720 --> 00:45:56,800
+this right hand side diagram over here.
+
+1329
+00:45:55,119 --> 00:45:58,480
+I'm going to have a thread that's trying
+
+1330
+00:45:56,800 --> 00:46:00,640
+to a series of threads that's trying to
+
+1331
+00:45:58,480 --> 00:46:02,400
+access you know left to right. So each
+
+1332
+00:46:00,640 --> 00:46:04,480
+thread is going to try to load you know
+
+1333
+00:46:02,400 --> 00:46:06,960
+the very first element and then in the
+
+1334
+00:46:04,480 --> 00:46:09,200
+next time step I'm going to the load the
+
+1335
+00:46:06,960 --> 00:46:10,800
+element from the uh this column the
+
+1336
+00:46:09,200 --> 00:46:12,800
+second column and then the third column
+
+1337
+00:46:10,800 --> 00:46:14,960
+and the fourth column and so on. So if
+
+1338
+00:46:12,800 --> 00:46:17,280
+that happens, what happens at time step
+
+1339
+00:46:14,960 --> 00:46:19,119
+one? Right? At time step one, my first
+
+1340
+00:46:17,280 --> 00:46:20,640
+thread loads this point and then the
+
+1341
+00:46:19,119 --> 00:46:22,240
+second thread loads this point and then
+
+1342
+00:46:20,640 --> 00:46:23,760
+this point and that point, right? So
+
+1343
+00:46:22,240 --> 00:46:26,000
+those can't be coalesed at all. They're
+
+1344
+00:46:23,760 --> 00:46:27,440
+reading different burst sections. And so
+
+1345
+00:46:26,000 --> 00:46:30,160
+that means that I have to read this
+
+1346
+00:46:27,440 --> 00:46:32,240
+entire chunk of memory in order to
+
+1347
+00:46:30,160 --> 00:46:34,319
+perform any sort of an operation.
+
+1348
+00:46:32,240 --> 00:46:36,160
+Instead, if I was sort of going in the
+
+1349
+00:46:34,319 --> 00:46:37,680
+column direction, all the threads will
+
+1350
+00:46:36,160 --> 00:46:39,680
+be reading within the single burst
+
+1351
+00:46:37,680 --> 00:46:41,520
+section. And then so only one memory
+
+1352
+00:46:39,680 --> 00:46:43,200
+read operation needs to be performed and
+
+1353
+00:46:41,520 --> 00:46:45,040
+you get all the memory at once. Right?
+
+1354
+00:46:43,200 --> 00:46:46,400
+This is a very low-level optimization,
+
+1355
+00:46:45,040 --> 00:46:47,920
+but this is very important. Right? If
+
+1356
+00:46:46,400 --> 00:46:49,760
+your memory traversal order is all
+
+1357
+00:46:47,920 --> 00:46:52,520
+wrong, you you will actually get much
+
+1358
+00:46:49,760 --> 00:46:54,760
+slower memory accesses than you really
+
+1359
+00:46:52,520 --> 00:46:57,680
+want.
+
+1360
+00:46:54,760 --> 00:47:01,040
+Okay? So then uh that brings us to kind
+
+1361
+00:46:57,680 --> 00:47:04,160
+of the very last and kind of big one. Um
+
+1362
+00:47:01,040 --> 00:47:06,400
+and this is the idea of uh tiling. Um
+
+1363
+00:47:04,160 --> 00:47:09,040
+and tiling is this idea that you would
+
+1364
+00:47:06,400 --> 00:47:10,720
+like to group together memory accesses
+
+1365
+00:47:09,040 --> 00:47:13,680
+um in order to minimize the amount of
+
+1366
+00:47:10,720 --> 00:47:16,000
+global memory access that we have to do.
+
+1367
+00:47:13,680 --> 00:47:18,000
+And so to explain this one uh I'm going
+
+1368
+00:47:16,000 --> 00:47:20,079
+to try to go through this example of a
+
+1369
+00:47:18,000 --> 00:47:23,040
+matrix multiply. And hopefully I'll be
+
+1370
+00:47:20,079 --> 00:47:24,640
+able to sort of explain to you um why
+
+1371
+00:47:23,040 --> 00:47:26,599
+sort of a naive algorithm for doing
+
+1372
+00:47:24,640 --> 00:47:28,560
+matrix multiply is going to be very
+
+1373
+00:47:26,599 --> 00:47:30,319
+problematic. And then afterwards I'm
+
+1374
+00:47:28,560 --> 00:47:32,480
+going to give you a tiled version of the
+
+1375
+00:47:30,319 --> 00:47:33,839
+same idea. And hopefully you'll be able
+
+1376
+00:47:32,480 --> 00:47:35,920
+to see why that's going to reduce the
+
+1377
+00:47:33,839 --> 00:47:39,200
+number of global memory reads um that
+
+1378
+00:47:35,920 --> 00:47:41,440
+you have to do. So let's start with this
+
+1379
+00:47:39,200 --> 00:47:43,440
+very simple matrix multiply uh
+
+1380
+00:47:41,440 --> 00:47:45,680
+algorithm. So you know I've got a matrix
+
+1381
+00:47:43,440 --> 00:47:48,640
+you know I got this M matrix on the left
+
+1382
+00:47:45,680 --> 00:47:50,800
+side. I've got my N matrix on the top.
+
+1383
+00:47:48,640 --> 00:47:52,720
+Um, and in order to compute, you know,
+
+1384
+00:47:50,800 --> 00:47:55,040
+the matrix matrix product, right, I'm
+
+1385
+00:47:52,720 --> 00:47:57,280
+going to have to traverse over the rows
+
+1386
+00:47:55,040 --> 00:47:59,760
+of M and the columns of N and then take
+
+1387
+00:47:57,280 --> 00:48:01,440
+the inner product and store that into uh
+
+1388
+00:47:59,760 --> 00:48:03,920
+this P matrix, right, the corresponding
+
+1389
+00:48:01,440 --> 00:48:07,280
+rows. Um, and I've written out here um
+
+1390
+00:48:03,920 --> 00:48:09,200
+each of the threads, the thread 01 1 0 1
+
+1391
+00:48:07,280 --> 00:48:11,200
+corresponding to where they're sort of
+
+1392
+00:48:09,200 --> 00:48:13,040
+storing their outputs and sort of the
+
+1393
+00:48:11,200 --> 00:48:16,160
+access order in which they access each
+
+1394
+00:48:13,040 --> 00:48:18,000
+of the individual elements. Now notice
+
+1395
+00:48:16,160 --> 00:48:19,839
+here that you know what's going to
+
+1396
+00:48:18,000 --> 00:48:23,440
+happen is that the memory access here is
+
+1397
+00:48:19,839 --> 00:48:25,280
+not coalesed like the row um uh matrices
+
+1398
+00:48:23,440 --> 00:48:28,960
+here these are going to be accessed in a
+
+1399
+00:48:25,280 --> 00:48:31,839
+non-co order and I have repeated memory
+
+1400
+00:48:28,960 --> 00:48:33,920
+accesses right so I've got m00 0 being
+
+1401
+00:48:31,839 --> 00:48:37,119
+accessed in the first thread m 0
+
+1402
+00:48:33,920 --> 00:48:39,119
+accessed here n0 n10 being accessed in
+
+1403
+00:48:37,119 --> 00:48:41,359
+two different threads you know so these
+
+1404
+00:48:39,119 --> 00:48:43,680
+values are being kind of read um over
+
+1405
+00:48:41,359 --> 00:48:45,119
+and over from global memory into many
+
+1406
+00:48:43,680 --> 00:48:46,960
+different threads
+
+1407
+00:48:45,119 --> 00:48:50,079
+And so this is going to be potentially
+
+1408
+00:48:46,960 --> 00:48:53,359
+very slow. So there's a question of can
+
+1409
+00:48:50,079 --> 00:48:55,119
+we avoid having too many global memory
+
+1410
+00:48:53,359 --> 00:48:56,800
+reads and writes. What I would ideally
+
+1411
+00:48:55,119 --> 00:48:58,640
+like to do, right? So let me explain
+
+1412
+00:48:56,800 --> 00:49:00,559
+kind of the the ideal outcome first and
+
+1413
+00:48:58,640 --> 00:49:02,640
+then I'll explain the algorithm. The
+
+1414
+00:49:00,559 --> 00:49:05,119
+ideal outcome is that I would like to
+
+1415
+00:49:02,640 --> 00:49:08,160
+spend one sort of, you know, chunk of
+
+1416
+00:49:05,119 --> 00:49:09,760
+time loading pieces from global memory
+
+1417
+00:49:08,160 --> 00:49:11,359
+to shared memory where things are fast.
+
+1418
+00:49:09,760 --> 00:49:13,359
+I want to do a ton of computation in
+
+1419
+00:49:11,359 --> 00:49:15,359
+shared memory and then I want to kind of
+
+1420
+00:49:13,359 --> 00:49:16,880
+be done with that piece of uh data.
+
+1421
+00:49:15,359 --> 00:49:19,359
+Right? That's the ideal outcome. I've
+
+1422
+00:49:16,880 --> 00:49:21,920
+minimized my global memory accesses. So
+
+1423
+00:49:19,359 --> 00:49:24,160
+now how can I do this um in this matrix
+
+1424
+00:49:21,920 --> 00:49:26,000
+multiply world? So now what I'm going to
+
+1425
+00:49:24,160 --> 00:49:27,760
+do is I'm going to take my matrices both
+
+1426
+00:49:26,000 --> 00:49:29,680
+the M matrix and the N matrix and I'm
+
+1427
+00:49:27,760 --> 00:49:32,079
+going to cut them up right into tiles.
+
+1428
+00:49:29,680 --> 00:49:34,960
+So here I've cut this up into 2x2 tiles.
+
+1429
+00:49:32,079 --> 00:49:37,200
+So I've got a 2x2 M tile and a 2x2 N
+
+1430
+00:49:34,960 --> 00:49:39,359
+tile right. So I've got basically uh
+
+1431
+00:49:37,200 --> 00:49:41,440
+smaller submatrices within each of the
+
+1432
+00:49:39,359 --> 00:49:42,880
+matrix. And now imagine that my shared
+
+1433
+00:49:41,440 --> 00:49:45,040
+memory is big enough to be able to fit
+
+1434
+00:49:42,880 --> 00:49:47,680
+these submatrices, right? Uh within each
+
+1435
+00:49:45,040 --> 00:49:50,240
+of these SM. So now this gives a very
+
+1436
+00:49:47,680 --> 00:49:52,880
+very simple uh algorithm with which we
+
+1437
+00:49:50,240 --> 00:49:55,280
+can do computation. So uh what I'm going
+
+1438
+00:49:52,880 --> 00:49:57,680
+to do is I'm going to first load you
+
+1439
+00:49:55,280 --> 00:49:59,599
+know let's say this m00 tile on the top
+
+1440
+00:49:57,680 --> 00:50:03,200
+left over here and I'm going to also
+
+1441
+00:49:59,599 --> 00:50:05,920
+load my N00 tile um into shared memory
+
+1442
+00:50:03,200 --> 00:50:08,240
+here. Right? Um, so now I have these
+
+1443
+00:50:05,920 --> 00:50:10,800
+partial sums that I can compute. I can
+
+1444
+00:50:08,240 --> 00:50:14,720
+take, you know, the the row product of
+
+1445
+00:50:10,800 --> 00:50:16,960
+m00 z m01 with n z n 0 and I can
+
+1446
+00:50:14,720 --> 00:50:19,200
+increment that into p 0. I can do the
+
+1447
+00:50:16,960 --> 00:50:22,000
+same with all the different submatrices
+
+1448
+00:50:19,200 --> 00:50:24,000
+that I can fill out over here. Right now
+
+1449
+00:50:22,000 --> 00:50:26,240
+then once I'm completely done sort of
+
+1450
+00:50:24,000 --> 00:50:28,480
+processing these two tiles, then I can
+
+1451
+00:50:26,240 --> 00:50:30,319
+load a new tile over here. And then I
+
+1452
+00:50:28,480 --> 00:50:33,440
+can repeat that computation with my M
+
+1453
+00:50:30,319 --> 00:50:34,720
+tile and my N2.0 tile loaded into shared
+
+1454
+00:50:33,440 --> 00:50:37,440
+memory. And then I can sort of increment
+
+1455
+00:50:34,720 --> 00:50:39,520
+my partial sums in P. Right? So now I've
+
+1456
+00:50:37,440 --> 00:50:41,280
+really sort of consolidated and reduced
+
+1457
+00:50:39,520 --> 00:50:42,960
+the amount of global memory access I
+
+1458
+00:50:41,280 --> 00:50:45,200
+have to do. Right? I I load as much
+
+1459
+00:50:42,960 --> 00:50:47,760
+memory as I can at once into shared
+
+1460
+00:50:45,200 --> 00:50:50,240
+memory. I do all of my sort of submatrix
+
+1461
+00:50:47,760 --> 00:50:52,640
+computations on that tile that I can and
+
+1462
+00:50:50,240 --> 00:50:54,559
+then I move on to the next one. Right?
+
+1463
+00:50:52,640 --> 00:50:56,640
+Um and of course the other nice thing is
+
+1464
+00:50:54,559 --> 00:50:58,480
+that because I'm loading um an entire
+
+1465
+00:50:56,640 --> 00:51:00,800
+tile, you know, I can traverse these
+
+1466
+00:50:58,480 --> 00:51:02,559
+submatrices matrices in whatever order I
+
+1467
+00:51:00,800 --> 00:51:04,319
+want like column measure or row measure.
+
+1468
+00:51:02,559 --> 00:51:06,160
+And so I can coales all the memory
+
+1469
+00:51:04,319 --> 00:51:08,000
+accesses whenever I'm loading a tile
+
+1470
+00:51:06,160 --> 00:51:10,640
+from global to shared memory. Right? So
+
+1471
+00:51:08,000 --> 00:51:13,160
+so there's kind of winds all around here
+
+1472
+00:51:10,640 --> 00:51:15,680
+um when we tile our
+
+1473
+00:51:13,160 --> 00:51:18,400
+accesses. So we can do a little bit of
+
+1474
+00:51:15,680 --> 00:51:21,440
+of tiling math. Um so we've got let's
+
+1475
+00:51:18,400 --> 00:51:23,359
+say a matrix A, a matrix B, and a matrix
+
+1476
+00:51:21,440 --> 00:51:25,520
+C. So let's say the full matrices these
+
+1477
+00:51:23,359 --> 00:51:27,839
+are square matrices are of size N. And
+
+1478
+00:51:25,520 --> 00:51:31,680
+let's say I have a tile of size T,
+
+1479
+00:51:27,839 --> 00:51:33,280
+right? Oh yes, question. Previous slide
+
+1480
+00:51:31,680 --> 00:51:39,119
+of
+
+1481
+00:51:33,280 --> 00:51:40,800
+load m0. So three loading m00 0 again.
+
+1482
+00:51:39,119 --> 00:51:42,559
+So in that case I just wrote it for for
+
+1483
+00:51:40,800 --> 00:51:44,720
+completeness but m00 z let's say is just
+
+1484
+00:51:42,559 --> 00:51:46,680
+you know stored in shared memory. Let's
+
+1485
+00:51:44,720 --> 00:51:48,960
+just keep it cached. I won't load it
+
+1486
+00:51:46,680 --> 00:51:50,319
+again. That that's definitely just there
+
+1487
+00:51:48,960 --> 00:51:52,880
+for completeness. Not that you would
+
+1488
+00:51:50,319 --> 00:51:55,000
+actually like discard and reload the the
+
+1489
+00:51:52,880 --> 00:51:59,440
+uh matrix again. That would be kind of
+
+1490
+00:51:55,000 --> 00:52:01,359
+insane. Cool. Okay. Um, and so we can
+
+1491
+00:51:59,440 --> 00:52:02,960
+kind of do very simple tiling math to
+
+1492
+00:52:01,359 --> 00:52:04,960
+think about, you know, what's happening.
+
+1493
+00:52:02,960 --> 00:52:07,520
+So let's say I'm going to do a n byn
+
+1494
+00:52:04,960 --> 00:52:09,440
+matrix multiply, right? Um, so if I do a
+
+1495
+00:52:07,520 --> 00:52:11,599
+non-tiled matrix multiply, if I'm just
+
+1496
+00:52:09,440 --> 00:52:13,359
+going over rows and columns, then every
+
+1497
+00:52:11,599 --> 00:52:15,440
+input every time I process it has to
+
+1498
+00:52:13,359 --> 00:52:17,440
+come from global memory. So each input
+
+1499
+00:52:15,440 --> 00:52:19,359
+is read sort of n times from global
+
+1500
+00:52:17,440 --> 00:52:22,240
+memory, right? So each of these is read
+
+1501
+00:52:19,359 --> 00:52:25,200
+sort of n times. Um, if I do a tiled
+
+1502
+00:52:22,240 --> 00:52:27,119
+matrix multiply, well, you know, the the
+
+1503
+00:52:25,200 --> 00:52:29,839
+global reads are operating over a tile.
+
+1504
+00:52:27,119 --> 00:52:32,000
+So I'm reading each input n over t times
+
+1505
+00:52:29,839 --> 00:52:33,760
+from global memory and I'm reading t
+
+1506
+00:52:32,000 --> 00:52:36,079
+times within each tile right of course
+
+1507
+00:52:33,760 --> 00:52:37,920
+I'm doing matrix matrix multiplies so I
+
+1508
+00:52:36,079 --> 00:52:39,680
+can't reduce the total number of reads I
+
+1509
+00:52:37,920 --> 00:52:43,119
+have to read all the matrix elements but
+
+1510
+00:52:39,680 --> 00:52:45,920
+I can shift the reads into uh basically
+
+1511
+00:52:43,119 --> 00:52:48,240
+fast shared memory right so I do t times
+
+1512
+00:52:45,920 --> 00:52:50,319
+um memory reads into shared memory and n
+
+1513
+00:52:48,240 --> 00:52:51,839
+overt times from global memory um and
+
+1514
+00:52:50,319 --> 00:52:53,839
+that's great because if we have a big
+
+1515
+00:52:51,839 --> 00:52:55,920
+shared memory that can store big tiles
+
+1516
+00:52:53,839 --> 00:52:57,440
+that's a factor of t reduction in the
+
+1517
+00:52:55,920 --> 00:52:59,520
+total amount of data that has to come
+
+1518
+00:52:57,440 --> 00:53:02,000
+from global memory. Right? So tiling can
+
+1519
+00:52:59,520 --> 00:53:03,839
+be really really powerful um of an idea
+
+1520
+00:53:02,000 --> 00:53:06,119
+when you're operating over matrices and
+
+1521
+00:53:03,839 --> 00:53:10,000
+you can move things um into shared
+
+1522
+00:53:06,119 --> 00:53:12,240
+memory. Um tiling is is quite complex.
+
+1523
+00:53:10,000 --> 00:53:15,680
+Um this is the source of many many sort
+
+1524
+00:53:12,240 --> 00:53:18,240
+of uh confusing things about GPU and
+
+1525
+00:53:15,680 --> 00:53:20,000
+matrix multiply performance. Um one
+
+1526
+00:53:18,240 --> 00:53:22,000
+thing that can happen right once we
+
+1527
+00:53:20,000 --> 00:53:24,640
+start tiling things you start asking
+
+1528
+00:53:22,000 --> 00:53:27,040
+things about discretization right. Um,
+
+1529
+00:53:24,640 --> 00:53:29,200
+so imagine I have a tile size of 128.
+
+1530
+00:53:27,040 --> 00:53:32,640
+That seems like a nice good round tile
+
+1531
+00:53:29,200 --> 00:53:34,960
+size. Um, but then um, you know, when I
+
+1532
+00:53:32,640 --> 00:53:37,400
+have a a full matrix of 256 size, that's
+
+1533
+00:53:34,960 --> 00:53:40,880
+great. That's a 2x2 tile. Things load
+
+1534
+00:53:37,400 --> 00:53:43,680
+nicely. Now, let's say I have a 257 size
+
+1535
+00:53:40,880 --> 00:53:46,480
+tile, um, on the column side. Now, this
+
+1536
+00:53:43,680 --> 00:53:48,800
+is a bad time because I need to have six
+
+1537
+00:53:46,480 --> 00:53:51,119
+tiles in order to cover this matrix. And
+
+1538
+00:53:48,800 --> 00:53:53,040
+the two tiles on the right are very,
+
+1539
+00:53:51,119 --> 00:53:54,880
+very sparse. there's just not much stuff
+
+1540
+00:53:53,040 --> 00:53:57,200
+in there, right? And the problem with
+
+1541
+00:53:54,880 --> 00:54:00,559
+this is that each tile is going to be
+
+1542
+00:53:57,200 --> 00:54:03,040
+assigned to SM, right? So each of these
+
+1543
+00:54:00,559 --> 00:54:04,559
+tiles is going to be a block and each
+
+1544
+00:54:03,040 --> 00:54:06,559
+thread is going to be operating within
+
+1545
+00:54:04,559 --> 00:54:08,240
+each tile. So those two tiles on the
+
+1546
+00:54:06,559 --> 00:54:09,680
+right, they're not going to be doing
+
+1547
+00:54:08,240 --> 00:54:11,280
+very much at all, right? Those SM are
+
+1548
+00:54:09,680 --> 00:54:12,640
+going to be basically be sitting idle.
+
+1549
+00:54:11,280 --> 00:54:13,920
+Um, and if you were kind of compute
+
+1550
+00:54:12,640 --> 00:54:16,160
+capped, you would have wanted to more
+
+1551
+00:54:13,920 --> 00:54:18,880
+evenly distribute the load uh between
+
+1552
+00:54:16,160 --> 00:54:21,280
+SM, right? So um you have to basically
+
+1553
+00:54:18,880 --> 00:54:23,200
+optimize your tile sizes to try to avoid
+
+1554
+00:54:21,280 --> 00:54:25,359
+these kinds of scenarios. But in
+
+1555
+00:54:23,200 --> 00:54:26,800
+reality, right, there's a lot of complex
+
+1556
+00:54:25,359 --> 00:54:28,800
+things that go into setting the tile
+
+1557
+00:54:26,800 --> 00:54:30,400
+size, right? Um remember you have to
+
+1558
+00:54:28,800 --> 00:54:32,000
+coales your memory accesses. So you have
+
+1559
+00:54:30,400 --> 00:54:35,119
+to think carefully about that. You have
+
+1560
+00:54:32,000 --> 00:54:36,640
+to um uh m you have to not exceed your
+
+1561
+00:54:35,119 --> 00:54:38,640
+shared memory size, right? So so the
+
+1562
+00:54:36,640 --> 00:54:40,640
+tiles can't be too big. And you have to
+
+1563
+00:54:38,640 --> 00:54:42,800
+divide the matrix dimension hopefully
+
+1564
+00:54:40,640 --> 00:54:44,559
+evenly or as close to evenly as possible
+
+1565
+00:54:42,800 --> 00:54:47,280
+so you don't end up with this situation
+
+1566
+00:54:44,559 --> 00:54:48,599
+of sort of an underutilized SM um at the
+
+1567
+00:54:47,280 --> 00:54:53,280
+very end
+
+1568
+00:54:48,599 --> 00:54:56,800
+here. Um yes so you have say smaller
+
+1569
+00:54:53,280 --> 00:54:59,559
+sizes do something like would GPUs do
+
+1570
+00:54:56,800 --> 00:55:03,599
+something like where they can like fetch
+
+1571
+00:54:59,559 --> 00:55:08,559
+the tile beforehand and if so like would
+
+1572
+00:55:03,599 --> 00:55:10,079
+that happen the level? Yeah. So you're
+
+1573
+00:55:08,559 --> 00:55:12,960
+you're asking about whether or not you
+
+1574
+00:55:10,079 --> 00:55:14,720
+can like overlap uh memory reads and
+
+1575
+00:55:12,960 --> 00:55:17,520
+computation and yeah that's that's
+
+1576
+00:55:14,720 --> 00:55:19,520
+naturally done in uh GPUs like they're
+
+1577
+00:55:17,520 --> 00:55:20,800
+always like trying to use the the
+
+1578
+00:55:19,520 --> 00:55:22,400
+available bandwidth. Like as long as
+
+1579
+00:55:20,800 --> 00:55:24,400
+shared memory is available they can go
+
+1580
+00:55:22,400 --> 00:55:25,680
+and put things into it. The issue is
+
+1581
+00:55:24,400 --> 00:55:28,800
+that whenever you're you know
+
+1582
+00:55:25,680 --> 00:55:30,160
+effectively utilizing um your SMS you're
+
+1583
+00:55:28,800 --> 00:55:31,760
+basically maxed out on your shared
+
+1584
+00:55:30,160 --> 00:55:34,480
+memory right that's like the the the
+
+1585
+00:55:31,760 --> 00:55:38,319
+bottlenecked resource and so there is no
+
+1586
+00:55:34,480 --> 00:55:40,760
+place to prefetch in some sense.
+
+1587
+00:55:38,319 --> 00:55:43,920
+Cool. Okay.
+
+1588
+00:55:40,760 --> 00:55:45,839
+Um, and the other thing that is very
+
+1589
+00:55:43,920 --> 00:55:48,480
+very, you know, we're getting into the
+
+1590
+00:55:45,839 --> 00:55:51,520
+weeds here, um, complex is the
+
+1591
+00:55:48,480 --> 00:55:55,440
+interaction between tiling, um, and sort
+
+1592
+00:55:51,520 --> 00:55:57,839
+of burst sections. Um, so imagine I have
+
+1593
+00:55:55,440 --> 00:56:00,160
+a a matrix layout that's kind of like
+
+1594
+00:55:57,839 --> 00:56:02,880
+this. Um, where, you know, I have my
+
+1595
+00:56:00,160 --> 00:56:04,799
+nice burst sections. Um, and each burst
+
+1596
+00:56:02,880 --> 00:56:07,119
+section lines up nicely with a tile. So
+
+1597
+00:56:04,799 --> 00:56:09,040
+to read this tile, all I have to do is
+
+1598
+00:56:07,119 --> 00:56:11,200
+to, you know, get four different burst
+
+1599
+00:56:09,040 --> 00:56:14,559
+sections and I've gotten this entire
+
+1600
+00:56:11,200 --> 00:56:17,920
+tile. Now imagine what happens if I add
+
+1601
+00:56:14,559 --> 00:56:20,079
+sort of one element extra and the way
+
+1602
+00:56:17,920 --> 00:56:22,000
+the the matrix is laid out, you know, my
+
+1603
+00:56:20,079 --> 00:56:24,799
+sort of tile start sort of my burst
+
+1604
+00:56:22,000 --> 00:56:27,040
+sections flow over. So now what's
+
+1605
+00:56:24,799 --> 00:56:28,720
+happening is when I load my tile, I'm
+
+1606
+00:56:27,040 --> 00:56:30,640
+going to load this first part and that's
+
+1607
+00:56:28,720 --> 00:56:32,799
+really great. I get the entire first row
+
+1608
+00:56:30,640 --> 00:56:34,559
+as a burst section. Now in the second
+
+1609
+00:56:32,799 --> 00:56:36,319
+row, this actually belongs to two
+
+1610
+00:56:34,559 --> 00:56:38,400
+different burst sections. And so I have
+
+1611
+00:56:36,319 --> 00:56:40,319
+to do two reads in order to get this
+
+1612
+00:56:38,400 --> 00:56:43,200
+second row and so on and so forth. So
+
+1613
+00:56:40,319 --> 00:56:45,760
+I've essentially doubled the number of
+
+1614
+00:56:43,200 --> 00:56:47,599
+memory accesses because I've added a
+
+1615
+00:56:45,760 --> 00:56:49,280
+single extra element at the very end
+
+1616
+00:56:47,599 --> 00:56:51,839
+there that's kind of bumped up the
+
+1617
+00:56:49,280 --> 00:56:54,240
+alignment of my burst section and my
+
+1618
+00:56:51,839 --> 00:56:56,640
+align layout. And so basically if tiles
+
+1619
+00:56:54,240 --> 00:56:58,480
+or your matrix sizes aren't multiples of
+
+1620
+00:56:56,640 --> 00:57:01,040
+your burst section, you can easily end
+
+1621
+00:56:58,480 --> 00:57:02,480
+up with situations like this where the
+
+1622
+00:57:01,040 --> 00:57:04,400
+rows don't line up with the burst
+
+1623
+00:57:02,480 --> 00:57:06,640
+section and you've doubled the amount of
+
+1624
+00:57:04,400 --> 00:57:08,559
+memory access that you have to do. Um,
+
+1625
+00:57:06,640 --> 00:57:10,640
+and the way to get around this is you
+
+1626
+00:57:08,559 --> 00:57:13,440
+have to do padding to be able to kind of
+
+1627
+00:57:10,640 --> 00:57:15,599
+get nice round matrix sizes so that your
+
+1628
+00:57:13,440 --> 00:57:17,520
+burst sections line up with the size of
+
+1629
+00:57:15,599 --> 00:57:19,520
+your tiles. Right? So this is this is
+
+1630
+00:57:17,520 --> 00:57:20,880
+getting very into the weeds here. Um but
+
+1631
+00:57:19,520 --> 00:57:22,240
+if you really want to squeeze out all
+
+1632
+00:57:20,880 --> 00:57:23,920
+the performance from your matrix
+
+1633
+00:57:22,240 --> 00:57:25,440
+multiplies, these are the kinds of
+
+1634
+00:57:23,920 --> 00:57:27,680
+things you have to think about, right?
+
+1635
+00:57:25,440 --> 00:57:30,760
+And you will get bitten by this um if
+
+1636
+00:57:27,680 --> 00:57:33,119
+you're not thinking about it.
+
+1637
+00:57:30,760 --> 00:57:35,280
+Um and of course, I guess like uh things
+
+1638
+00:57:33,119 --> 00:57:37,280
+like torch compile and and all the CUDA
+
+1639
+00:57:35,280 --> 00:57:38,640
+optimizations for matrix multiplies,
+
+1640
+00:57:37,280 --> 00:57:40,319
+they're doing exactly the kinds of stuff
+
+1641
+00:57:38,640 --> 00:57:41,920
+that that I just talked about, right?
+
+1642
+00:57:40,319 --> 00:57:45,280
+That's the way you you get better
+
+1643
+00:57:41,920 --> 00:57:47,680
+performance. Um and so you know all this
+
+1644
+00:57:45,280 --> 00:57:50,559
+matrix complexity you know ends up in
+
+1645
+00:57:47,680 --> 00:57:53,200
+situations like this um where you know
+
+1646
+00:57:50,559 --> 00:57:54,799
+the I'm reading Andre's this tweet here
+
+1647
+00:57:53,200 --> 00:57:56,880
+but you know the the most dramatic
+
+1648
+00:57:54,799 --> 00:58:01,280
+optimization to nano GPT is to increase
+
+1649
+00:57:56,880 --> 00:58:03,920
+the vocab size from 5257 to 5304
+
+1650
+00:58:01,280 --> 00:58:05,359
+um which is the nearest multiple 64 um
+
+1651
+00:58:03,920 --> 00:58:08,079
+which gives you much much higher
+
+1652
+00:58:05,359 --> 00:58:10,559
+occupancy um careful with your powers of
+
+1653
+00:58:08,079 --> 00:58:14,240
+two right so that's a 25% speed up from
+
+1654
+00:58:10,559 --> 00:58:16,640
+adding uh how many it's like 50 uh 57 no
+
+1655
+00:58:14,240 --> 00:58:18,319
+47 uh dimensions to your vocap like
+
+1656
+00:58:16,640 --> 00:58:22,400
+that's that's kind of like you know how
+
+1657
+00:58:18,319 --> 00:58:24,400
+does that happen right um and so that
+
+1658
+00:58:22,400 --> 00:58:26,000
+kind of brings us back to the mystery
+
+1659
+00:58:24,400 --> 00:58:29,040
+like you know I I was dragging you
+
+1660
+00:58:26,000 --> 00:58:30,559
+through all the GPU details um in the
+
+1661
+00:58:29,040 --> 00:58:31,920
+hopes that you know you'll have a full
+
+1662
+00:58:30,559 --> 00:58:33,760
+understanding of all the performance
+
+1663
+00:58:31,920 --> 00:58:35,520
+characteristics but in some sense the
+
+1664
+00:58:33,760 --> 00:58:37,839
+payoff is you know I now get to explain
+
+1665
+00:58:35,520 --> 00:58:39,599
+to you how this chart comes to be and at
+
+1666
+00:58:37,839 --> 00:58:41,839
+the end you won't find matrix multiply
+
+1667
+00:58:39,599 --> 00:58:45,119
+performance to be so uh mysterious or
+
+1668
+00:58:41,839 --> 00:58:47,119
+scary um at the end here, right? So the
+
+1669
+00:58:45,119 --> 00:58:49,040
+very first part is very very simple like
+
+1670
+00:58:47,119 --> 00:58:50,720
+we understand compute intensity, right?
+
+1671
+00:58:49,040 --> 00:58:52,319
+This is exactly the roof line that I
+
+1672
+00:58:50,720 --> 00:58:54,160
+pointed out at the very beginning,
+
+1673
+00:58:52,319 --> 00:58:57,760
+right? So so up until here, which is
+
+1674
+00:58:54,160 --> 00:58:59,839
+about 1536, right? Um there's just not
+
+1675
+00:58:57,760 --> 00:59:02,640
+enough matrix multiply work to do,
+
+1676
+00:58:59,839 --> 00:59:04,799
+right? The just loading the matrix and
+
+1677
+00:59:02,640 --> 00:59:06,960
+doing very basic IO, right, that you
+
+1678
+00:59:04,799 --> 00:59:08,640
+have to do is becoming a bottleneck
+
+1679
+00:59:06,960 --> 00:59:11,040
+below this point, right? So throughput
+
+1680
+00:59:08,640 --> 00:59:13,520
+is going to fall through to the ground.
+
+1681
+00:59:11,040 --> 00:59:15,520
+uh uh past this point you just don't
+
+1682
+00:59:13,520 --> 00:59:18,000
+have enough memory bandwidth to support
+
+1683
+00:59:15,520 --> 00:59:20,559
+your compute units. Now on the right
+
+1684
+00:59:18,000 --> 00:59:22,240
+side here in theory right if you if I
+
+1685
+00:59:20,559 --> 00:59:24,000
+draw the upper envelope this is the kind
+
+1686
+00:59:22,240 --> 00:59:26,799
+of maximum achievable performance. So
+
+1687
+00:59:24,000 --> 00:59:28,720
+it's possible up here to saturate all of
+
+1688
+00:59:26,799 --> 00:59:30,640
+my compute units and get really great
+
+1689
+00:59:28,720 --> 00:59:32,720
+performance. But if you kind of mess up
+
+1690
+00:59:30,640 --> 00:59:34,720
+your matrix sizing you can end up in
+
+1691
+00:59:32,720 --> 00:59:36,160
+these kind of really weird places and
+
+1692
+00:59:34,720 --> 00:59:38,079
+within each one of these you can kind of
+
+1693
+00:59:36,160 --> 00:59:39,119
+end up in a weird trough. And so we're
+
+1694
+00:59:38,079 --> 00:59:41,520
+going to kind of think a little bit
+
+1695
+00:59:39,119 --> 00:59:43,319
+about you know why do you have all these
+
+1696
+00:59:41,520 --> 00:59:47,599
+different places you can end
+
+1697
+00:59:43,319 --> 00:59:50,720
+up. Um so the very first thing um this
+
+1698
+00:59:47,599 --> 00:59:53,200
+first line here um this is a a tiling
+
+1699
+00:59:50,720 --> 00:59:55,359
+alignment issue. So if you look at um
+
+1700
+00:59:53,200 --> 00:59:58,160
+kind of the multiples here so I've now
+
+1701
+00:59:55,359 --> 01:00:00,319
+colored each of these lines based on
+
+1702
+00:59:58,160 --> 01:00:02,559
+kind of the divisibility of the matrix
+
+1703
+01:00:00,319 --> 01:00:04,480
+size um and this is the size by which
+
+1704
+01:00:02,559 --> 01:00:06,880
+it's divisible. So if it's divisible by
+
+1705
+01:00:04,480 --> 01:00:08,240
+32 then you're in good shape. you're in
+
+1706
+01:00:06,880 --> 01:00:12,720
+these purple dots up here. If you're
+
+1707
+01:00:08,240 --> 01:00:14,559
+divisible by uh 16, um you're actually
+
+1708
+01:00:12,720 --> 01:00:16,319
+uh still up here. There's two colors.
+
+1709
+01:00:14,559 --> 01:00:18,079
+And then if you're green, your k equals
+
+1710
+01:00:16,319 --> 01:00:20,319
+8, you're up here. If you're orange,
+
+1711
+01:00:18,079 --> 01:00:22,240
+you're k equals 2. And if you're k
+
+1712
+01:00:20,319 --> 01:00:23,839
+equals 1, you're all the way down here.
+
+1713
+01:00:22,240 --> 01:00:25,680
+If you're not divisible by any number,
+
+1714
+01:00:23,839 --> 01:00:27,680
+uh don't pick prime dimensions. You're
+
+1715
+01:00:25,680 --> 01:00:30,400
+not going to get very good throughput on
+
+1716
+01:00:27,680 --> 01:00:32,319
+your matrix multiplies. Um, and a big
+
+1717
+01:00:30,400 --> 01:00:34,720
+part of this is going to be, you know,
+
+1718
+01:00:32,319 --> 01:00:37,760
+once you get to kind of k equals 2 and k
+
+1719
+01:00:34,720 --> 01:00:39,920
+equals 1, you are basically forcing the
+
+1720
+01:00:37,760 --> 01:00:42,799
+situation where you can no longer read
+
+1721
+01:00:39,920 --> 01:00:44,640
+tiles in the sort of nicely aligned way
+
+1722
+01:00:42,799 --> 01:00:47,359
+with your burst reads. And that's going
+
+1723
+01:00:44,640 --> 01:00:49,319
+to lead to to some serious issues. So,
+
+1724
+01:00:47,359 --> 01:00:51,440
+so that's kind of a
+
+1725
+01:00:49,319 --> 01:00:53,119
+problem. But then, okay. So, so that's
+
+1726
+01:00:51,440 --> 01:00:54,559
+one part of the mystery, but I think
+
+1727
+01:00:53,119 --> 01:00:56,880
+another part of the mystery remains.
+
+1728
+01:00:54,559 --> 01:00:58,559
+Like, so within this orange line, you
+
+1729
+01:00:56,880 --> 01:01:00,480
+know, I think if you zoom into here, you
+
+1730
+01:00:58,559 --> 01:01:02,240
+see this giant drop, right, from from
+
+1731
+01:01:00,480 --> 01:01:03,760
+this point all the way down to this
+
+1732
+01:01:02,240 --> 01:01:05,119
+point where you're just kind of
+
+1733
+01:01:03,760 --> 01:01:07,839
+wondering what happened here? How could
+
+1734
+01:01:05,119 --> 01:01:09,640
+I lose so much performance increasing my
+
+1735
+01:01:07,839 --> 01:01:12,559
+dimension by
+
+1736
+01:01:09,640 --> 01:01:14,160
+two? Um, and so let's just look at these
+
+1737
+01:01:12,559 --> 01:01:15,520
+numbers. Um, and it's just I think this
+
+1738
+01:01:14,160 --> 01:01:17,440
+is a fun puzzle. So, I'm just going to
+
+1739
+01:01:15,520 --> 01:01:19,359
+walk you through the puzzle. Um this is
+
+1740
+01:01:17,440 --> 01:01:24,160
+going to happen when you transition from
+
+1741
+01:01:19,359 --> 01:01:25,839
+1792 to 1790 uh I guess three or four um
+
+1742
+01:01:24,160 --> 01:01:28,319
+size. Let's say four here. Um just so
+
+1743
+01:01:25,839 --> 01:01:30,880
+that it's a factor of two still. Well,
+
+1744
+01:01:28,319 --> 01:01:33,680
+why does that happen? Okay. Well, let's
+
+1745
+01:01:30,880 --> 01:01:36,319
+say that we're using a tile size of 256x
+
+1746
+01:01:33,680 --> 01:01:38,319
+128. That's a pretty natural size. Um as
+
+1747
+01:01:36,319 --> 01:01:40,240
+a fun fun fact, you know, the matrix
+
+1748
+01:01:38,319 --> 01:01:42,400
+multiply units in these GPUs, they're
+
+1749
+01:01:40,240 --> 01:01:45,839
+they're naturally operating on matrices
+
+1750
+01:01:42,400 --> 01:01:48,559
+of roughly size 128. So 256 x 128 is a
+
+1751
+01:01:45,839 --> 01:01:50,559
+is a very nice tile size, right? So that
+
+1752
+01:01:48,559 --> 01:01:53,119
+means how many tiles are there? Well,
+
+1753
+01:01:50,559 --> 01:01:54,400
+there's seven * 14 tiles, right? Because
+
+1754
+01:01:53,119 --> 01:01:56,400
+we're dividing the dimension of the
+
+1755
+01:01:54,400 --> 01:01:59,200
+matrix by the size of our tiles. That's
+
+1756
+01:01:56,400 --> 01:02:01,440
+a total of 98 different tiles. Um and if
+
+1757
+01:01:59,200 --> 01:02:02,880
+we increase this by one, well, you know,
+
+1758
+01:02:01,440 --> 01:02:04,319
+we're going to have to round up each one
+
+1759
+01:02:02,880 --> 01:02:06,559
+of our coordinates. And so we're going
+
+1760
+01:02:04,319 --> 01:02:08,160
+to have a lot more tiles, 120 of them,
+
+1761
+01:02:06,559 --> 01:02:11,280
+right? Um so we've increased the number
+
+1762
+01:02:08,160 --> 01:02:13,920
+of tiles by quite a bit. Um, well, you
+
+1763
+01:02:11,280 --> 01:02:15,680
+know what's going to happen is not only
+
+1764
+01:02:13,920 --> 01:02:17,359
+did we significantly increase the tiles
+
+1765
+01:02:15,680 --> 01:02:19,760
+and some of them have lower utilization,
+
+1766
+01:02:17,359 --> 01:02:24,160
+which is bad, but actually even worse,
+
+1767
+01:02:19,760 --> 01:02:25,680
+an A100 has 108 SMS, right? Um, and if I
+
+1768
+01:02:24,160 --> 01:02:27,920
+if you go all the way back to kind of
+
+1769
+01:02:25,680 --> 01:02:29,680
+the GPU execution model, right, SM can
+
+1770
+01:02:27,920 --> 01:02:31,520
+can execute in parallel and they're kind
+
+1771
+01:02:29,680 --> 01:02:34,160
+of the execution units. And so when you
+
+1772
+01:02:31,520 --> 01:02:35,520
+have 98 SMS, they all go and run, right?
+
+1773
+01:02:34,160 --> 01:02:37,119
+You can you can dispatch them all. All
+
+1774
+01:02:35,520 --> 01:02:40,079
+the SM are running, you know, you got
+
+1775
+01:02:37,119 --> 01:02:42,240
+great utilization. Once you go to 120 um
+
+1776
+01:02:40,079 --> 01:02:45,119
+tiles now you've got more tiles than
+
+1777
+01:02:42,240 --> 01:02:46,319
+SMS. So 108 of those will execute and
+
+1778
+01:02:45,119 --> 01:02:48,160
+then you will go back and you'll say all
+
+1779
+01:02:46,319 --> 01:02:49,440
+right I've got some more SMS at very
+
+1780
+01:02:48,160 --> 01:02:51,359
+very low utilization you're going to
+
+1781
+01:02:49,440 --> 01:02:52,559
+execute the remaining 12 and wait for
+
+1782
+01:02:51,359 --> 01:02:54,240
+those to complete right and that's going
+
+1783
+01:02:52,559 --> 01:02:55,920
+to be really bad. So if you look at your
+
+1784
+01:02:54,240 --> 01:02:57,359
+utilization, you got good utilization
+
+1785
+01:02:55,920 --> 01:02:58,960
+for a while, you'll drop off a cliff and
+
+1786
+01:02:57,359 --> 01:03:00,839
+then you'll sort of finish up your job,
+
+1787
+01:02:58,960 --> 01:03:03,280
+right? So this is something called wave
+
+1788
+01:03:00,839 --> 01:03:05,599
+quantization. Um and so ideally your
+
+1789
+01:03:03,280 --> 01:03:07,839
+tile sizes are either much bigger than
+
+1790
+01:03:05,599 --> 01:03:09,520
+the number of SMS or you know they're
+
+1791
+01:03:07,839 --> 01:03:10,880
+they're not like this where you're just
+
+1792
+01:03:09,520 --> 01:03:13,280
+like barely over the SM and you've
+
+1793
+01:03:10,880 --> 01:03:14,440
+caused this quantization uh sort of
+
+1794
+01:03:13,280 --> 01:03:16,200
+error uh
+
+1795
+01:03:14,440 --> 01:03:18,720
+additionally.
+
+1796
+01:03:16,200 --> 01:03:20,799
+Cool. All right. I know this is this is
+
+1797
+01:03:18,720 --> 01:03:23,039
+low-level details, but in many ways, you
+
+1798
+01:03:20,799 --> 01:03:25,039
+know, I I've been saying through through
+
+1799
+01:03:23,039 --> 01:03:26,799
+many classes that language models and
+
+1800
+01:03:25,039 --> 01:03:28,319
+deep learning is attention to detail.
+
+1801
+01:03:26,799 --> 01:03:29,760
+Um, and these kinds of attention to
+
+1802
+01:03:28,319 --> 01:03:32,000
+detail is the things that allow people
+
+1803
+01:03:29,760 --> 01:03:33,760
+to scale up LMS um to really really
+
+1804
+01:03:32,000 --> 01:03:35,280
+large sizes and get great performance.
+
+1805
+01:03:33,760 --> 01:03:36,680
+Um, so it's worth knowing even if you're
+
+1806
+01:03:35,280 --> 01:03:39,119
+not a person that's going to do systems
+
+1807
+01:03:36,680 --> 01:03:42,640
+engineering. So, what were the tricks,
+
+1808
+01:03:39,119 --> 01:03:44,480
+right? Um, key ideas here. First one is
+
+1809
+01:03:42,640 --> 01:03:46,480
+you got to reduce the amount of memory
+
+1810
+01:03:44,480 --> 01:03:48,480
+accesses, right? So, there's lots of
+
+1811
+01:03:46,480 --> 01:03:50,319
+ways to do it. You can do coalesing
+
+1812
+01:03:48,480 --> 01:03:51,680
+right so that you're not you can sort of
+
+1813
+01:03:50,319 --> 01:03:54,400
+reuse reads that you're getting for
+
+1814
+01:03:51,680 --> 01:03:56,559
+free. Um you can do fusion so that you
+
+1815
+01:03:54,400 --> 01:03:59,079
+know you can fuse multiple operations
+
+1816
+01:03:56,559 --> 01:04:01,440
+together and avoid unnecessary reads and
+
+1817
+01:03:59,079 --> 01:04:03,119
+writes. You can move memory to shared
+
+1818
+01:04:01,440 --> 01:04:04,400
+memory. So you know even if you're going
+
+1819
+01:04:03,119 --> 01:04:06,319
+to do reads they're going to be from
+
+1820
+01:04:04,400 --> 01:04:07,920
+much faster memory. Um and that's going
+
+1821
+01:04:06,319 --> 01:04:10,400
+to be sort of tiling tricks that you can
+
+1822
+01:04:07,920 --> 01:04:12,240
+do. Um and then finally you can kind of
+
+1823
+01:04:10,400 --> 01:04:13,760
+trade memory for other resources that
+
+1824
+01:04:12,240 --> 01:04:16,160
+you do have right? So you can trade it
+
+1825
+01:04:13,760 --> 01:04:18,000
+for compute which is going to be um
+
+1826
+01:04:16,160 --> 01:04:19,680
+recomputation or you can trade it for
+
+1827
+01:04:18,000 --> 01:04:21,200
+just numerical precision or stability
+
+1828
+01:04:19,680 --> 01:04:22,880
+which is going to be quantization right
+
+1829
+01:04:21,200 --> 01:04:24,960
+so there's lots of bags of tricks that
+
+1830
+01:04:22,880 --> 01:04:27,280
+you have in order to get sort of
+
+1831
+01:04:24,960 --> 01:04:29,359
+performance um out right so so there's
+
+1832
+01:04:27,280 --> 01:04:31,119
+lots of things you can do um you just
+
+1833
+01:04:29,359 --> 01:04:32,799
+have to be really mindful of kind of the
+
+1834
+01:04:31,119 --> 01:04:34,319
+role that memory plays in the
+
+1835
+01:04:32,799 --> 01:04:37,400
+performance of a GPU right that's kind
+
+1836
+01:04:34,319 --> 01:04:40,880
+of the key thing to get the m the most
+
+1837
+01:04:37,400 --> 01:04:42,240
+out cool any questions on on that before
+
+1838
+01:04:40,880 --> 01:04:44,640
+I sort of move to the final part with
+
+1839
+01:04:42,240 --> 01:04:44,640
+flash attention
+
+1840
+01:04:45,280 --> 01:04:50,400
+Okay, good. All right, so now I'm going
+
+1841
+01:04:48,480 --> 01:04:51,760
+to put it all together, right? Like I'm
+
+1842
+01:04:50,400 --> 01:04:53,359
+going to try to make it so that all the
+
+1843
+01:04:51,760 --> 01:04:54,880
+the tricks that I taught you aren't
+
+1844
+01:04:53,359 --> 01:04:57,200
+these like random disconnected facts
+
+1845
+01:04:54,880 --> 01:04:59,359
+about GPUs. They're kind of part of the
+
+1846
+01:04:57,200 --> 01:05:01,440
+standard performance optimization
+
+1847
+01:04:59,359 --> 01:05:03,520
+toolkit and flash attention and flash
+
+1848
+01:05:01,440 --> 01:05:05,280
+attention 2 will hopefully teach you how
+
+1849
+01:05:03,520 --> 01:05:06,799
+that all comes together to to build one
+
+1850
+01:05:05,280 --> 01:05:08,559
+of the, you know, the foundations, I
+
+1851
+01:05:06,799 --> 01:05:10,079
+guess, of modern high performance
+
+1852
+01:05:08,559 --> 01:05:12,400
+transformers.
+
+1853
+01:05:10,079 --> 01:05:13,839
+So um flash attention you know we know
+
+1854
+01:05:12,400 --> 01:05:15,920
+that it dramatically accelerates
+
+1855
+01:05:13,839 --> 01:05:17,440
+attention um and most of you probably
+
+1856
+01:05:15,920 --> 01:05:20,160
+know that that's done through some CUDA
+
+1857
+01:05:17,440 --> 01:05:22,720
+kernel magic um but maybe you don't know
+
+1858
+01:05:20,160 --> 01:05:24,720
+all the details right so you know what
+
+1859
+01:05:22,720 --> 01:05:26,240
+the the paper says is okay so there's
+
+1860
+01:05:24,720 --> 01:05:29,119
+one part that's happening which is you
+
+1861
+01:05:26,240 --> 01:05:30,640
+know you do attention on a unoptimized
+
+1862
+01:05:29,119 --> 01:05:32,160
+you know pietorch transformer
+
+1863
+01:05:30,640 --> 01:05:33,760
+implementation if you fuse the kernel
+
+1864
+01:05:32,160 --> 01:05:37,280
+and you do some things you can get
+
+1865
+01:05:33,760 --> 01:05:38,720
+significant significant speed ups um and
+
+1866
+01:05:37,280 --> 01:05:39,680
+from the paper you know they say we
+
+1867
+01:05:38,720 --> 01:05:41,280
+apply two established techniques
+
+1868
+01:05:39,680 --> 01:05:42,480
+techniques tiling and recomputation to
+
+1869
+01:05:41,280 --> 01:05:44,160
+overcome the technical challenge of
+
+1870
+01:05:42,480 --> 01:05:46,799
+computing exact attention in sub
+
+1871
+01:05:44,160 --> 01:05:48,799
+quadratic HBM accesses right so so it's
+
+1872
+01:05:46,799 --> 01:05:50,000
+not sub quadratic you know computation
+
+1873
+01:05:48,799 --> 01:05:52,079
+because you can't do that you have to
+
+1874
+01:05:50,000 --> 01:05:53,599
+compute you know attention in general
+
+1875
+01:05:52,079 --> 01:05:56,640
+but they're going to get subquadratic
+
+1876
+01:05:53,599 --> 01:05:58,160
+accesses to the uh high bandwidth or
+
+1877
+01:05:56,640 --> 01:06:00,240
+global memory right and so that's really
+
+1878
+01:05:58,160 --> 01:06:01,760
+the key if your memory is the bottleneck
+
+1879
+01:06:00,240 --> 01:06:03,359
+you know you want to make that not
+
+1880
+01:06:01,760 --> 01:06:05,520
+quadratic so that at least you can pay
+
+1881
+01:06:03,359 --> 01:06:09,319
+for quadratic cost with your compute
+
+1882
+01:06:05,520 --> 01:06:09,319
+rather than with your memory
+
+1883
+01:06:09,359 --> 01:06:12,720
+So just for a really quick recap, you
+
+1884
+01:06:11,280 --> 01:06:14,240
+know, at this point you've implemented
+
+1885
+01:06:12,720 --> 01:06:16,559
+attention many many times in many
+
+1886
+01:06:14,240 --> 01:06:17,920
+classes. Um right, so it's going to be
+
+1887
+01:06:16,559 --> 01:06:20,559
+three different matrix multiplies.
+
+1888
+01:06:17,920 --> 01:06:23,920
+You've got a K, Q, and V with a soft max
+
+1889
+01:06:20,559 --> 01:06:25,599
+in between. Um so the matrix multiplies
+
+1890
+01:06:23,920 --> 01:06:27,359
+are pretty simple that can be, you know,
+
+1891
+01:06:25,599 --> 01:06:29,440
+done with tiling. I've showed you
+
+1892
+01:06:27,359 --> 01:06:31,680
+examples like that. And what's different
+
+1893
+01:06:29,440 --> 01:06:33,680
+about attention? Well, there's a softmax
+
+1894
+01:06:31,680 --> 01:06:35,359
+thing that's going to be the real tricky
+
+1895
+01:06:33,680 --> 01:06:37,920
+bit. And then once we can deal with the
+
+1896
+01:06:35,359 --> 01:06:39,680
+softmax um all of the sort of matrix
+
+1897
+01:06:37,920 --> 01:06:42,799
+multiply things I was talking about will
+
+1898
+01:06:39,680 --> 01:06:45,039
+just come into play. So um the matrix
+
+1899
+01:06:42,799 --> 01:06:46,480
+multiply as I said before is exactly
+
+1900
+01:06:45,039 --> 01:06:48,400
+what I taught you. So if you look at the
+
+1901
+01:06:46,480 --> 01:06:50,240
+figure one from the flash attention
+
+1902
+01:06:48,400 --> 01:06:52,400
+paper, this is really just a simple
+
+1903
+01:06:50,240 --> 01:06:54,559
+tiled matrix multiply, right? You see,
+
+1904
+01:06:52,400 --> 01:06:56,640
+you know, the the K matrix, the Q
+
+1905
+01:06:54,559 --> 01:06:58,880
+matrix, you see it cut up into small
+
+1906
+01:06:56,640 --> 01:07:00,799
+blocks, you know, small blocks of it are
+
+1907
+01:06:58,880 --> 01:07:02,880
+being copied to SRAMM, they're being
+
+1908
+01:07:00,799 --> 01:07:05,760
+multiplied, and then they're being, you
+
+1909
+01:07:02,880 --> 01:07:08,400
+know, accumulate or they sent to the HBM
+
+1910
+01:07:05,760 --> 01:07:11,440
+where you do soft maxes um and then you
+
+1911
+01:07:08,400 --> 01:07:13,440
+multiply um with a V, right? So this is
+
+1912
+01:07:11,440 --> 01:07:16,319
+all just really simple um in terms of
+
+1913
+01:07:13,440 --> 01:07:17,839
+the KQV matrix multiply. But now we have
+
+1914
+01:07:16,319 --> 01:07:19,319
+to think about the softmax, right? Like
+
+1915
+01:07:17,839 --> 01:07:21,839
+what's going on with the
+
+1916
+01:07:19,319 --> 01:07:23,200
+softmax. So the key thing here is the
+
+1917
+01:07:21,839 --> 01:07:25,440
+softmax. Sorry, I'm going to I'm going
+
+1918
+01:07:23,200 --> 01:07:27,039
+to roll back one step. So the issue with
+
+1919
+01:07:25,440 --> 01:07:29,760
+the softmax. What's the problem with the
+
+1920
+01:07:27,039 --> 01:07:31,839
+softmax? It's a global operation, right?
+
+1921
+01:07:29,760 --> 01:07:34,160
+The softmax in an attention operates row
+
+1922
+01:07:31,839 --> 01:07:35,599
+by row. You have to sum the entire row,
+
+1923
+01:07:34,160 --> 01:07:37,760
+right? To compute sort of the sum
+
+1924
+01:07:35,599 --> 01:07:39,119
+normalizing term of the softmax. And
+
+1925
+01:07:37,760 --> 01:07:41,760
+that's very problematic. If I have
+
+1926
+01:07:39,119 --> 01:07:43,200
+tiles, right, ideally I want to do
+
+1927
+01:07:41,760 --> 01:07:45,119
+everything within the tiles, right? I
+
+1928
+01:07:43,200 --> 01:07:48,079
+don't ever want to have to write back to
+
+1929
+01:07:45,119 --> 01:07:50,400
+the big matrix. And so I need a softmax
+
+1930
+01:07:48,079 --> 01:07:51,760
+that can be computed online within each
+
+1931
+01:07:50,400 --> 01:07:53,880
+tile, right? I want to do as much
+
+1932
+01:07:51,760 --> 01:07:57,760
+computation within each tile as
+
+1933
+01:07:53,880 --> 01:08:00,799
+possible. So the key thing here is to uh
+
+1934
+01:07:57,760 --> 01:08:02,160
+use what's called the online softmax. Um
+
+1935
+01:08:00,799 --> 01:08:05,119
+and so what is that? If you have a
+
+1936
+01:08:02,160 --> 01:08:06,960
+stream of values, right, normally the
+
+1937
+01:08:05,119 --> 01:08:09,280
+batch version of the softmax, you take
+
+1938
+01:08:06,960 --> 01:08:10,880
+all of your x1 through x of ns and you
+
+1939
+01:08:09,280 --> 01:08:11,920
+would exponentiate them, sum them, and
+
+1940
+01:08:10,880 --> 01:08:12,880
+you would divide them, right? That's
+
+1941
+01:08:11,920 --> 01:08:14,559
+what you would do in your normal
+
+1942
+01:08:12,880 --> 01:08:16,480
+softmax. And then you would, you know,
+
+1943
+01:08:14,559 --> 01:08:18,480
+maybe compute the maximum value and you
+
+1944
+01:08:16,480 --> 01:08:20,000
+subtract that in order to be able to
+
+1945
+01:08:18,480 --> 01:08:21,839
+make this numerically stable, right? So
+
+1946
+01:08:20,000 --> 01:08:25,040
+this is the the standard numerically
+
+1947
+01:08:21,839 --> 01:08:26,880
+stable softmax on the the left side. Um,
+
+1948
+01:08:25,040 --> 01:08:28,880
+so the online softmax, I've taken this
+
+1949
+01:08:26,880 --> 01:08:31,520
+from from Mikallof and Gimmelstein in
+
+1950
+01:08:28,880 --> 01:08:34,640
+2018. Um well you can sort of realize
+
+1951
+01:08:31,520 --> 01:08:36,319
+that you can pull out um via sort of
+
+1952
+01:08:34,640 --> 01:08:39,120
+like a telescoping some kind of an
+
+1953
+01:08:36,319 --> 01:08:42,319
+argument um basically the current
+
+1954
+01:08:39,120 --> 01:08:44,400
+running uh sort of normalizer term and
+
+1955
+01:08:42,319 --> 01:08:46,719
+the current sort of top term of e to the
+
+1956
+01:08:44,400 --> 01:08:48,000
+x i minus max of x k right so what
+
+1957
+01:08:46,719 --> 01:08:50,080
+you're going to do is you're going to
+
+1958
+01:08:48,000 --> 01:08:53,120
+maintain your current max that you've
+
+1959
+01:08:50,080 --> 01:08:54,960
+seen over x1 through x of j which is my
+
+1960
+01:08:53,120 --> 01:08:57,600
+current iteration and then I'm also
+
+1961
+01:08:54,960 --> 01:08:59,679
+going to maintain sort of this uh
+
+1962
+01:08:57,600 --> 01:09:01,839
+correction term if my max updated This
+
+1963
+01:08:59,679 --> 01:09:03,920
+is going to basically correct my max and
+
+1964
+01:09:01,839 --> 01:09:06,560
+then I'm going to add my sort of new
+
+1965
+01:09:03,920 --> 01:09:09,279
+term over here. Right? So this d of j is
+
+1966
+01:09:06,560 --> 01:09:11,759
+going to track online the top term of
+
+1967
+01:09:09,279 --> 01:09:14,799
+this equation term two over here and
+
+1968
+01:09:11,759 --> 01:09:17,359
+then you know at the end I can also then
+
+1969
+01:09:14,799 --> 01:09:19,679
+compute the the normalizer and then sort
+
+1970
+01:09:17,359 --> 01:09:21,679
+of get the normalized y of i that I want
+
+1971
+01:09:19,679 --> 01:09:24,880
+right this d of v is itself sort of the
+
+1972
+01:09:21,679 --> 01:09:26,880
+normalization term um that I need. So
+
+1973
+01:09:24,880 --> 01:09:28,799
+the key thing here is that this can be
+
+1974
+01:09:26,880 --> 01:09:31,440
+done online. I don't need the x1 through
+
+1975
+01:09:28,799 --> 01:09:34,480
+x ofn up front. All I need need is sort
+
+1976
+01:09:31,440 --> 01:09:35,920
+of the stream of x1 through xn. And
+
+1977
+01:09:34,480 --> 01:09:38,080
+that's really key because I can now
+
+1978
+01:09:35,920 --> 01:09:39,679
+compute the softmax tile by tile. Right?
+
+1979
+01:09:38,080 --> 01:09:41,359
+Within each tile, I can run this
+
+1980
+01:09:39,679 --> 01:09:43,520
+algorithm and that will let me compute
+
+1981
+01:09:41,359 --> 01:09:46,000
+kind of the partial softmax for that
+
+1982
+01:09:43,520 --> 01:09:48,319
+tile. And then I can sort of write back
+
+1983
+01:09:46,000 --> 01:09:50,000
+if I need to all the components that I
+
+1984
+01:09:48,319 --> 01:09:51,679
+sort of I'm keeping track of. And that's
+
+1985
+01:09:50,000 --> 01:09:53,279
+all that I kind of need in order to do
+
+1986
+01:09:51,679 --> 01:09:57,360
+this computation. Right? So I never have
+
+1987
+01:09:53,279 --> 01:09:59,800
+to materialize the full um n squ matrix
+
+1988
+01:09:57,360 --> 01:10:03,520
+in order to compute the
+
+1989
+01:09:59,800 --> 01:10:05,280
+softmax. And so that's basically it. But
+
+1990
+01:10:03,520 --> 01:10:06,640
+once you have that, you know, you've put
+
+1991
+01:10:05,280 --> 01:10:09,040
+it all together and you can get the
+
+1992
+01:10:06,640 --> 01:10:10,560
+forward pass um of flash attention. And
+
+1993
+01:10:09,040 --> 01:10:12,960
+if you go and look at the flash
+
+1994
+01:10:10,560 --> 01:10:14,400
+attention to paper, which is um going to
+
+1995
+01:10:12,960 --> 01:10:15,920
+be a thing that we're going to ask you
+
+1996
+01:10:14,400 --> 01:10:17,360
+to implement. So you you're going to be
+
+1997
+01:10:15,920 --> 01:10:19,040
+following through kind of these these
+
+1998
+01:10:17,360 --> 01:10:21,440
+steps here. Um you're going to see
+
+1999
+01:10:19,040 --> 01:10:24,159
+exactly this idea. So first you're going
+
+2000
+01:10:21,440 --> 01:10:25,679
+to have your your KQ matrix multiply and
+
+2001
+01:10:24,159 --> 01:10:27,280
+this is going to be tiled. So these are
+
+2002
+01:10:25,679 --> 01:10:28,880
+little tiled chunks and they're going to
+
+2003
+01:10:27,280 --> 01:10:30,800
+be multiplied. And how am I going to
+
+2004
+01:10:28,880 --> 01:10:33,679
+compute the softmax? Well, I'm going to
+
+2005
+01:10:30,800 --> 01:10:36,159
+maintain sort of a running value of
+
+2006
+01:10:33,679 --> 01:10:37,600
+these sort of exponentiated sums. And
+
+2007
+01:10:36,159 --> 01:10:39,120
+then I'm going to keep incrementally
+
+2008
+01:10:37,600 --> 01:10:41,440
+updating it and correcting for the
+
+2009
+01:10:39,120 --> 01:10:43,679
+maximum terms. And by doing that I can
+
+2010
+01:10:41,440 --> 01:10:46,560
+compute all the necessary quantities
+
+2011
+01:10:43,679 --> 01:10:48,239
+kind of tile by tile sort of going from
+
+2012
+01:10:46,560 --> 01:10:51,040
+one tile to another. and then just
+
+2013
+01:10:48,239 --> 01:10:53,199
+multiply once again with tiles with V in
+
+2014
+01:10:51,040 --> 01:10:57,360
+the end and that will give me sort of my
+
+2015
+01:10:53,199 --> 01:10:58,719
+full soft max output right um yes so we
+
+2016
+01:10:57,360 --> 01:11:02,840
+won't be able to compute that output
+
+2017
+01:10:58,719 --> 01:11:05,440
+until we compute the like 2k
+
+2018
+01:11:02,840 --> 01:11:08,239
+multiplication across all tiles right so
+
+2019
+01:11:05,440 --> 01:11:10,239
+we do have to double back on each um so
+
+2020
+01:11:08,239 --> 01:11:12,880
+the question was you can't compute this
+
+2021
+01:11:10,239 --> 01:11:14,719
+until you you are done um with all the
+
+2022
+01:11:12,880 --> 01:11:17,840
+tiles and so you have to double back um
+
+2023
+01:11:14,719 --> 01:11:20,480
+on all the tiles um So you won't have
+
+2024
+01:11:17,840 --> 01:11:22,239
+built up that denominator sum until you
+
+2025
+01:11:20,480 --> 01:11:24,159
+see every tile. Um that's right. So so
+
+2026
+01:11:22,239 --> 01:11:25,679
+you will have to before you can output
+
+2027
+01:11:24,159 --> 01:11:28,800
+your softmax you will have to go through
+
+2028
+01:11:25,679 --> 01:11:30,960
+all the tiles. This is correct. Um but
+
+2029
+01:11:28,800 --> 01:11:33,199
+by let's say I do all the tiles once
+
+2030
+01:11:30,960 --> 01:11:34,480
+right like I do all n squed tiles. Um at
+
+2031
+01:11:33,199 --> 01:11:36,480
+that point I have all the components
+
+2032
+01:11:34,480 --> 01:11:37,920
+that I need in order to directly output
+
+2033
+01:11:36,480 --> 01:11:40,000
+the soft maps. At that point I don't
+
+2034
+01:11:37,920 --> 01:11:42,239
+have to re do recomputation because I
+
+2035
+01:11:40,000 --> 01:11:44,000
+have the normalizer terms already right
+
+2036
+01:11:42,239 --> 01:11:46,239
+by going through each of these kind of
+
+2037
+01:11:44,000 --> 01:11:48,960
+tiles. at the end of going through all
+
+2038
+01:11:46,239 --> 01:11:51,600
+these tiles, I've built up, you know, L3
+
+2039
+01:11:48,960 --> 01:11:53,600
+or L L of N, which is the sum of all of
+
+2040
+01:11:51,600 --> 01:11:55,920
+the exponentiated terms. So, I already
+
+2041
+01:11:53,600 --> 01:11:58,960
+have that in my sort of uh in my shared
+
+2042
+01:11:55,920 --> 01:12:01,120
+memory for this last tile. And then that
+
+2043
+01:11:58,960 --> 01:12:04,239
+allows me to exponentiate and divide and
+
+2044
+01:12:01,120 --> 01:12:04,239
+then return all the
+
+2045
+01:12:04,920 --> 01:12:10,880
+components. Okay. Um, so the backward
+
+2046
+01:12:08,560 --> 01:12:13,280
+pass I'm not going to cover. um you can
+
+2047
+01:12:10,880 --> 01:12:15,440
+do recomputation tile by tile which will
+
+2048
+01:12:13,280 --> 01:12:17,360
+allow you to avoid storing the softmax
+
+2049
+01:12:15,440 --> 01:12:19,280
+right remember you know I always want to
+
+2050
+01:12:17,360 --> 01:12:21,440
+avoid storing anything that's of size n
+
+2051
+01:12:19,280 --> 01:12:23,040
+squared and so here I've been sort of
+
+2052
+01:12:21,440 --> 01:12:25,040
+clever with the tiles so that I don't
+
+2053
+01:12:23,040 --> 01:12:26,320
+have to store any of the n squ
+
+2054
+01:12:25,040 --> 01:12:28,400
+components when I'm computing for
+
+2055
+01:12:26,320 --> 01:12:30,560
+example the softmax but in the backwards
+
+2056
+01:12:28,400 --> 01:12:32,239
+pass if I store the activations that's
+
+2057
+01:12:30,560 --> 01:12:34,000
+already something that's n squed sized
+
+2058
+01:12:32,239 --> 01:12:35,760
+right so I don't want to store my n
+
+2059
+01:12:34,000 --> 01:12:38,080
+squed activations I'm going to have to
+
+2060
+01:12:35,760 --> 01:12:40,080
+recmp compute it on the fly tile by tile
+
+2061
+01:12:38,080 --> 01:12:41,760
+when I do the backwards pass Right. So
+
+2062
+01:12:40,080 --> 01:12:43,679
+that's a really key other trick that
+
+2063
+01:12:41,760 --> 01:12:45,840
+they do um in order to to make the
+
+2064
+01:12:43,679 --> 01:12:47,520
+backwards pass possible. But otherwise
+
+2065
+01:12:45,840 --> 01:12:48,960
+it's fairly standard. It's really the
+
+2066
+01:12:47,520 --> 01:12:51,159
+same thing as computing the gradients
+
+2067
+01:12:48,960 --> 01:12:54,159
+just tile by tile and doing that
+
+2068
+01:12:51,159 --> 01:12:54,159
+computation.
+
+2069
+01:12:54,520 --> 01:12:59,199
+Um so okay that that brings us to the
+
+2070
+01:12:57,360 --> 01:13:00,640
+end here. Um, hopefully you've kind of
+
+2071
+01:12:59,199 --> 01:13:02,520
+seen how all of the pieces I talked
+
+2072
+01:13:00,640 --> 01:13:04,719
+about about tiling and coalesing and
+
+2073
+01:13:02,520 --> 01:13:06,480
+recomputation um, come together to to
+
+2074
+01:13:04,719 --> 01:13:08,080
+give you uh, flash attention and all
+
+2075
+01:13:06,480 --> 01:13:11,920
+these really cool things that make your
+
+2076
+01:13:08,080 --> 01:13:13,920
+transformers go much faster. Um, so to
+
+2077
+01:13:11,920 --> 01:13:15,679
+to you know recap for the whole lecture,
+
+2078
+01:13:13,920 --> 01:13:17,360
+right? Hardware is kind of the thing
+
+2079
+01:13:15,679 --> 01:13:19,360
+that has really powered all of the
+
+2080
+01:13:17,360 --> 01:13:21,040
+language models that we have today. Um,
+
+2081
+01:13:19,360 --> 01:13:22,320
+and so if you really want to leverage
+
+2082
+01:13:21,040 --> 01:13:24,239
+your hardware, you have to understand
+
+2083
+01:13:22,320 --> 01:13:26,159
+the low-level details. I think all the
+
+2084
+01:13:24,239 --> 01:13:27,600
+systems advances really engage with a
+
+2085
+01:13:26,159 --> 01:13:30,640
+lot of the the concepts that I taught
+
+2086
+01:13:27,600 --> 01:13:32,080
+today. Um and the current GPU sort of
+
+2087
+01:13:30,640 --> 01:13:34,080
+scaling, you know, that plot is really
+
+2088
+01:13:32,080 --> 01:13:36,560
+the one you should remember. Um really
+
+2089
+01:13:34,080 --> 01:13:38,560
+really incentivizes and encourages you
+
+2090
+01:13:36,560 --> 01:13:39,920
+uh to think about memory movement,
+
+2091
+01:13:38,560 --> 01:13:42,000
+right? The memory movement is the
+
+2092
+01:13:39,920 --> 01:13:43,199
+bottleneck in all of this. And so you
+
+2093
+01:13:42,000 --> 01:13:45,120
+don't want to just think about oh how do
+
+2094
+01:13:43,199 --> 01:13:47,520
+I reduce the number of flops? That's
+
+2095
+01:13:45,120 --> 01:13:48,960
+important too. Um really you really have
+
+2096
+01:13:47,520 --> 01:13:52,000
+to think about okay, how do I make my
+
+2097
+01:13:48,960 --> 01:13:54,159
+memory movements more efficient? Um and
+
+2098
+01:13:52,000 --> 01:13:56,320
+then finally if you you know have to do
+
+2099
+01:13:54,159 --> 01:13:58,719
+a certain amount of computation well to
+
+2100
+01:13:56,320 --> 01:14:00,800
+optimize things the way to do it is to
+
+2101
+01:13:58,719 --> 01:14:02,880
+optimize your data movement right to to
+
+2102
+01:14:00,800 --> 01:14:04,880
+be able to avoid as much movement from
+
+2103
+01:14:02,880 --> 01:14:06,880
+the the high bandwidth memory or the
+
+2104
+01:14:04,880 --> 01:14:08,320
+global memory um as possible. You want
+
+2105
+01:14:06,880 --> 01:14:10,000
+to reduce that and have everything in
+
+2106
+01:14:08,320 --> 01:14:11,920
+the very very fast shared memory and
+
+2107
+01:14:10,000 --> 01:14:14,640
+that leads to good performance um on
+
+2108
+01:14:11,920 --> 01:14:17,960
+things like um flash attention. Um
+
+2109
+01:14:14,640 --> 01:14:17,960
+thanks everyone.
+

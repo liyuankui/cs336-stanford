@@ -1,0 +1,28 @@
+figure	frame	start	end	topic
+fig_01_dpo_recap.jpg	frame_0007.jpg	00:01:30	00:02:10	DPO目标与梯度更新（RLHF回顾）
+fig_02_overoptimization.jpg	frame_0029.jpg	00:07:00	00:07:40	过度优化：代理奖励与真实偏好的分歧
+fig_03_calibration.jpg	frame_0035.jpg	00:08:30	00:09:00	RLHF导致模型校准变差
+fig_04_rlvr_motivation.jpg	frame_0052.jpg	00:12:55	00:13:25	RLVR动机：从人类反馈到可验证奖励
+fig_05_policy_gradient.jpg	frame_0061.jpg	00:15:00	00:15:30	策略梯度定理：期望奖励的梯度
+fig_06_trpo.jpg	frame_0067.jpg	00:16:35	00:17:00	TRPO：重要性采样修正与KL约束
+fig_07_ppo_clip.jpg	frame_0070.jpg	00:17:15	00:17:35	PPO clip目标：截断优势函数
+fig_08_ppo_implementation.jpg	frame_0083.jpg	00:20:30	00:21:30	PPO实现细节：价值模型与损失计算
+fig_09_gae.jpg	frame_0106.jpg	00:26:15	00:26:45	广义优势估计（GAE）与方差缩减
+fig_10_grpo_intro.jpg	frame_0118.jpg	00:29:25	00:29:55	GRPO：去掉价值模型的简化方案
+fig_11_grpo_group.jpg	frame_0123.jpg	00:30:00	00:30:45	GRPO组内z-score优势：均值与标准差
+fig_12_kl_control_variate.jpg	frame_0132.jpg	00:32:45	00:33:15	GRPO中KL散度的控制变量估计
+fig_13_deepseekmath_results.jpg	frame_0142.jpg	00:35:00	00:35:40	DeepSeek-Math：GRPO结果对比（PRM vs结果奖励）
+fig_14_drgrpo_criticism.jpg	frame_0158.jpg	00:39:25	00:40:00	Dr.GRPO：除以标准差引入偏差
+fig_15_drgrpo_length.jpg	frame_0162.jpg	00:40:25	00:41:00	Dr.GRPO：长度归一化导致输出膨胀
+fig_16_r1_zero.jpg	frame_0186.jpg	00:46:15	00:46:45	R1-Zero：纯RL的受控实验
+fig_17_r1_aha_moment.jpg	frame_0194.jpg	00:48:30	00:49:00	R1-Zero的"aha moment"与回溯现象
+fig_18_r1_pipeline.jpg	frame_0201.jpg	00:50:00	00:50:30	R1完整流水线：SFT初始化、RL、二次RLHF
+fig_19_r1_performance.jpg	frame_0219.jpg	00:54:35	00:54:55	R1性能：全面逼近O1
+fig_20_r1_distillation.jpg	frame_0222.jpg	00:55:05	00:55:30	R1蒸馏：百万级CoT迁移到Qwen
+fig_21_kimi_data.jpg	frame_0247.jpg	00:01:01:55	00:01:02:25	Kimi K1.5数据：best-of-8难度过滤
+fig_22_kimi_rl_algo.jpg	frame_0254.jpg	00:01:03:30	00:01:04:00	Kimi K1.5 RL算法：平方损失正则化
+fig_23_kimi_length_reward.jpg	frame_0267.jpg	00:01:06:45	00:01:07:15	Kimi K1.5长度奖励：压缩CoT
+fig_24_kimi_infra.jpg	frame_0279.jpg	00:01:09:30	00:01:10:15	Kimi K1.5 RL基础设施：推理与训练worker
+fig_25_qwen3_pipeline.jpg	frame_0299.jpg	00:01:14:35	00:01:14:55	Qwen3流水线：SFT、推理RL、思维融合、RLHF
+fig_26_qwen3_thinking_fusion.jpg	frame_0310.jpg	00:01:17:15	00:01:17:45	Qwen3思维模式融合：think/no-think标签
+fig_27_qwen3_ablation.jpg	frame_0313.jpg	00:01:18:30	00:01:19:00	Qwen3消融：推理RL与通用RL的权衡

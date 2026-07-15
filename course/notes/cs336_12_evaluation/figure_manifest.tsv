@@ -1,0 +1,25 @@
+figure	topic	timestamp
+fig_01_benchmark_scores	论文里的 benchmark 分数表（Llama 4 / MMLU Pro / Math 500）	00:00:40
+fig_02_helm	HELM：聚合多种标准 benchmark 的评估平台	00:01:40
+fig_03_pareto_frontier	Artificial Analysis：能力-价格 Pareto 前沿	00:02:10
+fig_04_openrouter_traffic	OpenRouter：按使用流量排序的隐式排行榜	00:02:50
+fig_05_eval_crisis	评估危机：benchmark 饱和/被博弈（Karpathy）	00:03:30
+fig_06_no_one_eval	没有唯一正确的评估：取决于要回答的问题	00:06:30
+fig_07_eval_framework	评估框架：输入 / 调用模型 / 评估输出 / 解读结果	00:08:20
+fig_08_perplexity	Perplexity 定义：测试集上的对数似然	00:16:50
+fig_09_gpt2_zeroshot	GPT-2 零样本 perplexity：WebText 跨域泛化	00:19:00
+fig_10_contamination	数据污染与去污染：移除测试集重叠文档	00:23:00
+fig_11_scaling_ppl	Scaling laws 与 perplexity 的关系	00:24:10
+fig_12_mmlu_intro	MMLU：57 学科多项选择知识 benchmark	00:32:50
+fig_13_fewshot_prompt	Few-shot prompting 的标准模板	00:34:30
+fig_14_fewshot_variance	Few-shot 示例的选择与顺序带来巨大方差	00:37:30
+fig_15_mmlu_2020	MMLU 始于 2020，本是为 base model 设计	00:40:20
+fig_16_mmlu_pro	MMLU-Pro：更难、10 选项，突破饱和区	00:41:50
+fig_17_gpqa	GPQA Diamond：研究生水平专家级问题	00:44:30
+fig_18_hle	Humanity's Last Exam：极致难题集	00:49:20
+fig_19_chatbot_arena	Chatbot Arena：成对偏好的 Elo 排名	00:54:00
+fig_20_ifeval	IFEval：指令遵循的可验证功能测试	00:57:00
+fig_21_alpacaeval	AlpacaEval：LLM-as-judge 计算胜率	00:58:50
+fig_22_swebench	SWE-bench：代码库 + GitHub issue 的 agent 评测	01:02:00
+fig_23_arc	ARC：抽象推理语料库，隔离推理能力	01:05:10
+fig_24_safety	Safety benchmark：安全性与有害请求拒绝	01:06:50

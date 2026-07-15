@@ -1,0 +1,26 @@
+figure	frame	start	end	topic
+fig_01_collectives_overview	frame_0006	00:01:15	00:01:45	本周回顾 + 集合通信（collectives）总览：DP/TP/PP 复习引入
+fig_02_collective_ops	frame_0018	00:04:15	00:04:45	集合通信原语总览：broadcast/scatter/gather/reduce/all-reduce/reduce-scatter/all-gather 的关系图
+fig_03_broadcast_scatter	frame_0021	00:05:00	00:05:30	broadcast vs scatter：一个值发全员 vs 不同值分发到各 rank
+fig_04_gather_reduce	frame_0025	00:06:00	00:06:30	gather vs reduce：gather 拼接各 rank 张量，reduce 用算子（sum/min/max）合并到一个 rank
+fig_05_reduce_scatter	frame_0026	00:06:30	00:07:00	reduce-scatter：reduce 之后 scatter，每个 rank 拿到合并结果的一块
+fig_06_all_gather	frame_0030	00:07:00	00:07:30	all-gather：所有 rank 都拿到拼接后的完整张量
+fig_07_reduce_gather_inverse	frame_0031	00:07:30	00:08:00	reduce = reduce-scatter + all-gather 的等价关系；"all" 表示所有 rank 都收到
+fig_08_pytorch_distributed	frame_0062	00:15:15	00:15:45	PyTorch 分布式：dist.all_reduce/all_gather/reduce_scatter 的 API 使用
+fig_09_reduce_scatter_demo	frame_0076	00:18:45	00:19:15	reduce-scatter 数值演示：4 个 rank 各持 [1,2,3,4] 的块，reduce-scatter 后各拿一份求和结果
+fig_10_all_gather_demo	frame_0085	00:21:00	00:21:30	all-gather 演示：把 reduce-scatter 的输出拼接回完整张量，证明 reduce-scatter+all-gather ≡ all-reduce
+fig_11_all_reduce_ring	frame_0096	00:23:45	00:24:15	all-reduce 在 4 个 rank 上的 ring 实现：分步 reduce 再 broadcast
+fig_12_bandwidth_benchmark	frame_0106	00:26:15	00:26:45	带宽基准测试：测量 all-reduce 在不同张量大小下的字节传输量与耗时
+fig_13_reduce_scatter_bench	frame_0115	00:28:30	00:29:00	reduce-scatter 基准测试：与 all-reduce 对比，没有 2x 因子（只需送出一份）
+fig_14_comm_cost_analysis	frame_0126	00:31:15	00:31:45	通信成本分析：reduce-scatter 与 all-gather 各传输 (N-1)/N · size，all-reduce 是二者之和
+fig_15_allreduce_data_parallel	frame_0146	00:36:15	00:36:45	all-reduce 的教科书应用：数据并行（DP）中梯度同步
+fig_16_dp_gradient_sync	frame_0154	00:38:15	00:38:45	数据并行梯度同步：所有 rank 在同一 step 做 all-reduce，是同步点
+fig_17_tensor_parallel_split	frame_0168	00:41:45	00:42:15	张量并行（Megatron 风格）：把模型按 num_dim 切到多个 GPU，local_num_dim = num_dim / world_size
+fig_18_tensor_forward	frame_0180	00:44:45	00:45:15	张量并行前向：每个 rank 算自己那份，再用 all-gather 拼回完整输出
+fig_19_tensor_allgather	frame_0186	00:46:15	00:46:45	张量并行中的 all-gather：每个 rank 持有局部输出，all-gather 后全员得到完整结果
+fig_20_pipeline_intro	frame_0192	00:47:45	00:48:15	流水线并行（pipeline parallelism）引入：把模型按层切分到不同 GPU
+fig_21_pipeline_bubbles	frame_0200	00:49:45	00:50:15	流水线气泡（bubbles）：朴素实现中 GPU 空闲的"气泡"区域
+fig_22_pipeline_send_recv	frame_0209	00:52:15	00:52:45	流水线 send/recv：相邻 stage 之间用点对点 send/recv 传递激活
+fig_23_pipeline_overlap	frame_0222	00:55:15	00:55:45	流水线通信-计算重叠：用异步通信隐藏 send/recv 的延迟
+fig_24_3d_parallelism	frame_0232	00:57:45	00:58:15	3D 并行：DP + TP + PP 三种并行方式的组合，各自用不同维度
+fig_25_fdsp_zero	frame_0239	00:59:45	00:59:45	FSDP / 参数分片（sharding）：声明式定义分片策略，按需 all-gather 还原参数（与 ZeRO 对应）

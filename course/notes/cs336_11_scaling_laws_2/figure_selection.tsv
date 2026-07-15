@@ -1,0 +1,30 @@
+fig_number	frame	timestamp	description
+01	0001	00:00:15	开场：课程导言与回顾
+02	0008	00:02:00	Better scaling laws：Chinchilla 概览
+03	0013	00:03:15	Better scaling laws：损失函数 L(N,D)
+04	0023	00:05:45	Better scaling laws：三步法流程图
+05	0035	00:08:45	Better scaling laws：参数化拟合
+06	0042	00:10:30	Better scaling laws：N_opt, D_opt 计算图
+07	0055	00:13:45	Better scaling laws：等损失曲线
+08	0070	00:17:30	Better scaling laws：L(N,D)=E+A/N^α+B/D^β
+09	0085	00:21:15	Better scaling laws：最优学习率调度
+10	0100	00:25:00	Better scaling laws：compute-optimal 前沿
+11	0110	00:27:30	Better scaling laws：完整 loss 拟合
+12	0125	00:31:15	Better scaling laws：Chinchilla 三种方法
+13	0140	00:35:00	Better scaling laws：IsoFLOP 曲线对比
+14	0150	00:37:30	Scaling laws: what they mean
+15	0160	00:40:00	How should we scale learning rate and batch size?
+16	0170	00:42:30	超参数迁移：动机与挑战
+17	0180	00:45:00	Hyperparameter transfer: experimental setup
+18	0190	00:47:30	Hyperparameter transfer：宽度缩放
+19	0200	00:50:00	Hyperparameter transfer：学习率缩放公式
+20	0210	00:52:30	Hyperparameter transfer：验证结果
+21	0220	00:55:00	Maximal Update Parametrization (µP)
+22	0230	00:57:30	µP：激活非消散条件
+23	0240	01:00:00	µP：数学推导
+24	0250	01:02:30	µP：初始化稳定性
+25	0260	01:05:00	µP：宽度缩放推导
+26	0270	01:07:30	µP：学习率 1/宽度 关系
+27	0280	01:10:00	Summary：µP 总结
+28	0300	01:15:00	总结与展望
+29	0313	01:18:15	课程结语

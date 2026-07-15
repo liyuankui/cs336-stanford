@@ -1,0 +1,24 @@
+figure	frame	start	end	topic
+fig_01_gpu_scaling	frame_0019	00:04:30	00:05:00	GPU 单卡 FLOPs 超指数增长 + 世界最快超算 ExaFLOPS 列表，说明多机并行的动机
+fig_02_gpu_tpu_topology	frame_0039	00:09:15	00:09:45	GPU vs TPU 网络拓扑：GPU leaf-spine 交换机（至 256 GPU 全互联）vs TPU toroidal mesh（仅与邻居通信）
+fig_03_node_hierarchy	frame_0031	00:07:30	00:08:00	GPT-NeoX 8-GPU 节点：NVSwitch 机内高速互联 + HDR InfiniBand 机间慢速链路，硬件层级
+fig_04_collectives	frame_0055	00:13:30	00:14:00	五种集合通信原语：all-reduce / broadcast / reduce / all-gather / reduce-scatter 的图示
+fig_05_part1_recap	frame_0065	00:16:00	00:16:30	Part 1 回顾：以数据中心为新的计算单元，目标——线性内存扩展 + 线性算力扩展
+fig_06_three_paradigms	frame_0083	00:20:30	00:21:00	三种并行范式总览：Data Parallelism（复制参数、切批）/ Model Parallelism（切参数）/ Activation Parallelism
+fig_07_dp_memory	frame_0097	00:24:00	00:24:30	朴素数据并行：每张 GPU 复制完整 params+gradients+optimizer state，内存不扩展
+fig_08_zero_stage1	frame_0109	00:27:00	00:27:30	ZeRO Stage 1 内存表：params 2B + grad 2B + master 4B + Adam m 4B + Adam v 4B = 16 字节/参数
+fig_09_zero_stage2	frame_0123	00:30:30	00:31:00	ZeRO Stage 2：反向传播时逐层 reduce-scatter 梯度到所属 worker，分片梯度
+fig_10_zero_stage3_fsdp	frame_0151	00:37:30	00:38:00	ZeRO Stage 3 / FSDP：参数、梯度、优化器状态全部分片，每 GPU 仅持有 1/N
+fig_11_fsdp_steps	frame_0161	00:40:00	00:40:30	FSDP 逐步流程：all-gather 参数 → forward → all-gather → reduce-scatter 更新 → free 权重
+fig_12_fsdp_timeline	frame_0175	00:43:30	00:44:00	FSDP 通信-计算时间线：逐层 all-gather/reduce-scatter 的甘特图
+fig_13_fsdp_overlap	frame_0199	00:49:30	00:50:00	FSDP 重叠通信与计算：预取（prefetch）下一层权重，CPU dispatch 提前于 GPU 执行
+fig_14_pipeline_bubble	frame_0213	00:53:00	00:53:30	朴素流水线并行的气泡（bubble）：GPU 串行激活，4 卡仅得 1 卡吞吐
+fig_15_pipeline_1f1b	frame_0227	00:56:30	00:57:00	1F1B 流水线调度：micro-batch 填充流水线，气泡 = (stages-1)/microbatches
+fig_16_zerobubble	frame_0241	01:00:00	01:00:30	ZeroBubble / DualPipe：分离 B（激活反传）与 W（权重梯度），将 W 填入气泡
+fig_17_tensor_parallel	frame_0255	01:03:30	01:04:00	张量并行：沿宽度切分大矩阵乘法 X·A=Y 为子矩阵，部分和后 all-reduce
+fig_18_tp_mlp	frame_0269	01:07:00	01:07:30	张量并行应用于 MLP：A 列切分为 A1/A2，B 行切分为 B1/B2，前向 all-reduce、反向 all-reduce
+fig_19_tp_performance	frame_0283	01:10:30	01:11:00	张量并行性能：TP=8 后吞吐骤降（16 卡 -42%、32 卡 -65%），故 TP 上限为机内 GPU 数
+fig_20_sequence_parallel	frame_0297	01:14:00	01:14:30	序列并行：LayerNorm/Dropout 沿序列维切分，前向 all-gather、反向 reduce-scatter
+fig_21_activation_memory	frame_0311	01:17:30	01:18:00	每层激活内存公式 SBH×34 + 5AS²/H：MLP 项与 attention 二次项
+fig_22_3d_parallel	frame_0325	01:21:00	01:21:30	3D/4D 并行：TP（机内）× PP（跨机）× DP（最外层）的组合规则
+fig_23_case_studies	frame_0333	01:23:00	01:23:30	案例研究：Megatron-LM / Llama 3 的 TP/PP/DP 配置与 MFU（40-52% 峰值）

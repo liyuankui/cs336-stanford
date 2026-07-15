@@ -1,0 +1,34 @@
+figure	frame	start	end	topic
+fig_01_gpu_arch	0009	00:02:00	00:02:15	GPU 硬件回顾：SM、thread block、内存层级（DRAM/cache/register file）
+fig_02_thread_blocks	0013	00:03:00	00:03:15	Thread block 调度模型：block 落在单个 SM、shared memory 通信
+fig_03_waves_warp	0017	00:04:00	00:04:15	Warp（32 线程）与 wave（wave quantization）调度概念
+fig_04_arithmetic_intensity	0022	00:05:15	00:05:30	算术强度 / roofline：FLOPs/Byte、compute-bound vs memory-bound
+fig_05_why_profile	0029	00:07:00	00:07:15	为什么必须 benchmark + profile：不要凭直觉猜瓶颈
+fig_06_mlp_code	0037	00:09:00	00:09:15	示例 MLP：128 维、16 层、Linear+GELU 堆叠
+fig_07_benchmark_fn	0041	00:10:00	00:10:15	benchmark() 包装函数：warm-up + trials + torch.cuda.synchronize
+fig_08_warmup_sync	0045	00:11:00	00:11:15	warm-up 与 CUDA synchronize 的必要性说明
+fig_09_matmul_scaling	0057	00:14:00	00:14:15	矩阵乘法规模 vs 运行时间：超线性 scaling、小矩阵常数开销
+fig_10_profiling_intro	0069	00:17:00	00:17:15	Profiling 引言：比 benchmark 更细粒度，看进函数内部
+fig_11_pytorch_profiler	0073	00:18:00	00:18:15	torch.profiler 基本用法：CPU+GPU 时间表
+fig_12_add_profile	0077	00:19:00	00:19:15	向量加法 profile：aten::add → vectorized_elementwise_kernel
+fig_13_matmul_profile	0085	00:21:00	00:21:15	矩阵乘法 profile：aten::mm → cutlass / XMMA GMM kernel
+fig_14_cdist_profile	0113	00:28:00	00:28:15	cdist profile：分解为 mm/pow/sum 多个 CUDA kernel
+fig_15_gelu_softmax_profile	0125	00:31:00	00:31:15	GELU / softmax 的 profile：已融合的单 CUDA kernel
+fig_16_mlp_profile	0133	00:33:00	00:33:15	完整 MLP 的 torch profiler 输出：backward、mm、accumulate_grad
+fig_17_nsight_nvtx	0141	00:35:00	00:35:15	NVIDIA Nsight Systems + NVTX range 标注
+fig_18_cpu_gpu_async	0149	00:37:00	00:37:15	CPU/GPU 异步执行：CPU 提前把 kernel 排进 GPU 队列
+fig_19_print_impact	0157	00:39:00	00:39:15	一句 print(loss) 触发 CUDA synchronize、破坏异步流水线
+fig_20_cuda_sync_wait	0165	00:41:00	00:41:15	CUDA stream synchronize：CPU 空等 GPU 完成的 dummy 操作
+fig_21_nsight_summary	0173	00:43:00	00:43:15	Nsight kernel 执行摘要：按总时长排序、warm-up 排除前几步
+fig_22_gelu_benchmark	0186	00:46:15	00:46:30	GELU 基准：手工 8.15ms vs PyTorch 1.13ms（8 倍差距）
+fig_23_cuda_kernel_intro	0193	00:48:00	00:48:15	CUDA = C++ API；grid/block/thread 层次模型介绍
+fig_24_cuda_gelu_code	0205	00:51:00	00:51:15	CUDA GELU 完整代码：kernel + wrapper（contiguous 检查、empty_like、<<<>>>）
+fig_25_gelu_kernel_detail	0219	00:54:30	00:54:45	__global__ gelu_kernel 细节：blockIdx×blockDim+threadIdx、边界检查、tanh 常数
+fig_26_cuda_benchmark	0229	00:57:00	00:57:15	CUDA GELU 基准：1.84ms（从 8.1ms 降到接近 PyTorch 的 1.1ms）
+fig_27_triton_intro	0257	01:04:00	01:04:15	Triton 介绍：OpenAI 2021 DSL，block 级编程，自动 coalescing/shared memory
+fig_28_triton_gelu_code	0265	01:06:00	01:06:15	Triton GELU：tl.arange 偏移、mask、tl.load/tl.store 向量化
+fig_29_ptx_code	0277	01:09:00	01:09:15	PTX 近机器码：寄存器分配、ld.global 4 值合并加载、MUFU tanh
+fig_30_all_benchmarks	0289	01:12:00	01:12:15	全部实现对比：手工 8.1 / PyTorch 1.1 / CUDA 1.84 / Triton 1.848 ms
+fig_31_torch_compile	0293	01:13:00	01:13:15	torch.compile：JIT 自动算子融合，生成 Triton，1.47ms
+fig_32_triton_softmax	0309	01:17:00	01:17:15	Triton softmax：一个 block 处理一行、next_power_of_2 padding
+fig_33_softmax_benchmark	0317	01:19:00	01:19:15	softmax 基准对比：手工 3.7 / torch.compile 1.3 / PyTorch 1.5 / Triton 1.9 秒

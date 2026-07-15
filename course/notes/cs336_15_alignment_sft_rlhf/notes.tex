@@ -1,0 +1,942 @@
+\documentclass[a4paper]{article}
+
+% Basic packages
+\usepackage{fontspec}
+\XeTeXlinebreaklocale "zh"    % 启用中文断行（XeTeX 内建，无需 xeCJK）
+\XeTeXlinebreakskip = 0pt plus 1pt
+\setmainfont{Songti SC}
+\setsansfont{Heiti SC}
+\setmonofont{Menlo}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[most]{tcolorbox}
+\usepackage{etoolbox}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{float}
+
+% Chinese font setup (macOS system fonts, no ctex needed)
+\setmainfont{Songti SC}
+\setsansfont{Heiti SC}
+\setmonofont{Menlo}
+\newcommand{\song}{\fontspec{Songti SC}}
+\newcommand{\hei}{\fontspec{Heiti SC}}
+\newcommand{\kai}{\fontspec{KaiTi}}
+\newcommand{\fangsong}{\fontspec{FangSong}}
+
+% ===== Highlight boxes =====
+\newtcolorbox{knowledgebox}[1]{
+    enhanced, colback=blue!5!white, colframe=blue!75!black, colbacktitle=blue!75!black,
+    coltitle=white, fonttitle=\bfseries, title=#1, attach boxed title to top left={yshift=-2mm, xshift=2mm},
+    boxrule=1pt, sharp corners
+}
+
+\newtcolorbox{importantbox}[1]{
+    enhanced, colback=yellow!10!white, colframe=yellow!80!black, colbacktitle=yellow!80!black,
+    coltitle=black, fonttitle=\bfseries, title=#1, sharp corners
+}
+
+\newtcolorbox{warningbox}[1]{
+    enhanced, colback=red!5!white, colframe=red!75!black, colbacktitle=red!75!black,
+    coltitle=white, fonttitle=\bfseries, title=#1, sharp corners
+}
+
+\newtcolorbox{practicebox}[1]{
+    enhanced, colback=green!5!white, colframe=green!60!black, colbacktitle=green!60!black,
+    coltitle=white, fonttitle=\bfseries, title=#1, sharp corners
+}
+
+% ===== Code listings =====
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red!60!black},
+    commentstyle=\color{green!60!black},
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    captionpos=b,
+    extendedchars=false
+}
+
+% ===== Front-page metadata =====
+\newcommand{\notetitle}{CS336 Lecture 15：对齐——SFT 与 RLHF}
+\newcommand{\notesubtitle}{Stanford CS336: Language Modeling from Scratch (Spring 2025)}
+\newcommand{\noteauthors}{讲师：Tatsu Hashimoto \quad 笔记：ZCode}
+\newcommand{\notedate}{2026-07-14}
+\newcommand{\videochannel}{Stanford CS336}
+\newcommand{\videopublishdate}{2025 Spring}
+\newcommand{\videoduration}{75 分钟}
+\newcommand{\videourl}{https://www.youtube.com/watch?v=hAY-WySnfYs}
+\newcommand{\videocoverpath}{cover.jpg}
+
+\begin{document}
+
+% ===== Title page =====
+\begin{titlepage}
+\centering
+{\Large 课程笔记\par}
+\vspace{1.2cm}
+{\huge\bfseries \notetitle\par}
+\vspace{0.3cm}
+{\large \notesubtitle\par}
+\vspace{0.5cm}
+{\large \noteauthors\par}
+\vspace{0.3cm}
+{\large \notedate\par}
+\vspace{1.0cm}
+
+\includegraphics[width=0.82\textwidth,height=0.40\textheight,keepaspectratio]{\videocoverpath}\par
+
+\vfill
+\begin{tcolorbox}[width=0.9\textwidth, colback=black!2!white, colframe=black!60, sharp corners]
+\textbf{视频作者/频道}：\videochannel\par
+\textbf{发布日期}：\videopublishdate\par
+\textbf{视频时长}：\videoduration\par
+\textbf{视频链接}：\href{\videourl}{\nolinkurl{\videourl}}
+\end{tcolorbox}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%% --- 正文内容开始 ---
+
+\section{从预训练到对齐：本讲的定位}
+
+\subsection{课程最后两讲：后训练}
+
+这门课到目前已经花了大量篇幅讨论预训练——数据、系统、scaling laws、模型架构。本讲和下一讲则把焦点转向\textbf{后训练（post-training）}：拿到一个巨大的预训练模型之后，如何让它\textbf{有用（useful）}且\textbf{安全（safe）}。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_01_lecture_overview.jpg}
+\caption{Lecture 15：从预训练到后训练的转折\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:00:30--00:00:45。}
+
+今天（Lecture 15）讲 \textbf{RLHF 与安全对齐}，下一讲（Lecture 16）讲\textbf{可验证奖励的强化学习（RL from verifiable rewards）}，也就是数学、推理这类有标准答案的训练场景。
+
+\subsection{本讲的中心问题：GPT-3 $\to$ ChatGPT 的箭头}
+
+讲师 Tatsu Hashimoto 用一张图点明了整堂课要回答的核心问题：
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_02_base_vs_aligned.jpg}
+\caption{基础模型 vs 对齐模型：同一个底层，截然不同的可用性\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:01:00--00:01:15。}
+
+\begin{importantbox}{两个系统的鲜明对照}
+\textbf{GPT-3（2020）}：海量预训练、海量算力，但它"不跟随指令"——给一句"写一段广告文案"，它可能继续补全成一篇新闻。除了少数创业公司拿来生成广告文案，几乎没有产品价值。
+
+\textbf{ChatGPT（2022 年底）}：突然能跟随一长串嵌套指令、能写代码、能做规划。Sebastian Bubeck 在《Sparks of AGI》论文里展示了 GPT-4 能一次性消化一段超长的复合指令，再结合其编码能力，零样本生成 matplotlib 可视化代码。
+\end{importantbox}
+
+今天这堂课的目标，就是讲清楚这根"GPT-3 $\to$ ChatGPT"的箭头\textbf{内部到底发生了什么}。
+
+\begin{warningbox}{不仅仅是"有用"}
+这些系统一旦上线，\textbf{安全（safety）}和\textbf{内容审核（content moderation）}立刻变得至关重要。模型可能被滥用做诈骗、垃圾信息、虚假信息；而商业化产品也不能是"毒性的"——没人愿意在一个满嘴脏话的机器人上投放广告。ChatGPT 之所以成功，相当一部分原因就是它有一圈相当稳固的\textbf{护栏（guardrails）}。
+\end{warningbox}
+
+\subsection{本讲的整体结构}
+
+本讲结构大致沿用 \textbf{InstructGPT 论文}（Ouyang et al., 2022）的三步流程，因为直到今天，主流后训练流水线依然是它的变体：
+
+\begin{enumerate}
+\item \textbf{Part 1：监督微调（SFT）}——在专家示范数据上做模仿学习。
+\item \textbf{Part 2：强化学习（RLHF）}——收集成对偏好，训练奖励模型，再用 PPO/DPO 优化。
+\end{enumerate}
+
+\begin{knowledgebox}{后训练的三个根本问题}
+讲师把整个后训练领域归结为三个问题：
+
+\begin{enumerate}
+\item \textbf{数据}长什么样？有多难收集？（Percy 上一讲已经触及，本讲会再强调）
+\item \textbf{算法}：给定数据，怎么用？专家示范很容易用（直接模仿）；但成对偏好（"输出 A 比 B 好"）这种数据怎么用？
+\item \textbf{规模化}：怎么像本课其它主题一样把这套流程 scale 起来？
+\end{enumerate}
+\end{knowledgebox}
+
+\section{基础模型 vs 对齐模型：心智模型}
+
+\subsection{预训练"打包能力"，后训练"激活能力"}
+
+一个有用的心智模型是：
+
+\begin{itemize}
+\item \textbf{预训练}把各种能力（推理、问答、知识）\textbf{压缩进}模型参数里，但模型\textbf{不会自发地}把这些能力用出来。
+\item \textbf{后训练}收集"我们希望模型展现的各类行为"的数据，训练模型去\textbf{主动表现}这些能力。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_03_why_alignment.jpg}
+\caption{为什么需要对齐：部署场景对模型的额外要求\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:02:45--00:03:00。}
+
+\subsection{InstructGPT 三步法：本讲的导航图}
+
+InstructGPT 论文里那张经典的三步流程图，是理解整个后训练领域的钥匙：
+
+\begin{itemize}
+\item \textbf{Step 1（SFT）}：拿 prompt + 专家写的高质量回答，做标准的监督微调。
+\item \textbf{Step 2（奖励模型，Reward Model）}：让模型生成多个输出，人工比较"A 比 B 好"，训练一个能给任意输出打分的标量奖励模型。
+\item \textbf{Step 3（PPO）}：把奖励模型当 reward，用强化学习（PPO）继续优化策略，同时用 KL 约束防止漂离 SFT 模型太远。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig_18_instructgpt_3step.jpg}
+\caption{InstructGPT 三步法：SFT $\to$ Reward Model $\to$ PPO\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:45:50--00:46:10。}
+
+\begin{importantbox}{为什么这张图这么重要}
+讲师反复强调："\textbf{post-training 这个子领域与 InstructGPT 论文深度绑定。}"直到 2025 年，工业界主流流水线仍是这张图的变体——Step 1 的 SFT 还在，Step 2/3 的成对偏好 + 奖励 / 直接优化还在，只是数据来源（人类 $\to$ AI）和算法（PPO $\to$ DPO）发生了演化。
+\end{importantbox}
+
+\section{SFT 数据的三种范式}
+
+\subsection{三种数据构造思路}
+
+讲师挑选了三个"用截然不同的方式构造"的指令微调数据集，分别代表了三种范式：
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_04_flan_collection.jpg}
+\caption{Flan：把大量 NLP 任务数据集聚合在一起\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:06:58--00:07:15。}
+
+\begin{tabular}{p{2.5cm}p{3.5cm}p{8cm}}
+\toprule
+\textbf{数据集} & \textbf{构造范式} & \textbf{特点} \\
+\midrule
+Flan & 聚合已有 NLP 数据集 & 把 QA、文本分类、摘要等几十个任务数据集拼成一个大池，天然但常常"不自然" \\
+Open Assistant & 众包志愿者手写 & ChatGPT 发布后社区热情高涨，志愿者贡献了高质量、长篇、带引用的对话 \\
+Alpaca & 用 LLM 从种子生成 & 175 条人工种子指令 $\to$ 用 LLM 扩展成 5.2 万条，再加 InstructGPT 风格的回答 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Flan：聚合 NLP 任务}
+
+Flan（Google，Wei et al. 2022）的核心想法是：NLP 社区已经积累了海量带标注的任务数据集（Natural Instructions v2、T0、SF、adversarial QA、主题分类、Enron 邮件等），把它们\textbf{统一格式}后拼到一起，就能免费得到一个超大指令数据集。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_05_flan_tasks.jpg}
+\caption{Flan 任务类型示例：摘要、多选、邮件主题生成等\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:08:15--00:08:30。}
+
+\begin{warningbox}{Flan 的"不自然"问题}
+看几个 Flan 样本就会发现：很多样本的"指令"是\textbf{外科手术式地}把原文 + 选项拼起来得到的，并不是真实聊天里会出现的问法。比如 Enron 邮件数据 + "给这封邮件写个标题"，就把一封企业内部邮件变成了一个任务。这种数据\textbf{不是 ChatGPT 那样的对话交互}——回答常常极短（一个词、一个短语）。
+\end{warningbox}
+
+\subsection{Open Assistant：众包长篇对话}
+
+Open Assistant 是 ChatGPT 刚发布时社区热情的产物：一群在线爱好者自发聚在一起，为语言模型写指令微调数据。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_06_open_assistant.jpg}
+\caption{Open Assistant：众包、长篇、带引用的高质量对话\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:09:40--00:10:00。}
+
+\begin{importantbox}{Open Assistant 的两面性}
+\textbf{优点}：查询更复杂，回答非常详尽，甚至会附上\textbf{引用}说明"为什么这个答案是对的"——质量极高。
+
+\textbf{代价}：写这么长的回答\textbf{极其困难}。即使在课堂上让被激励的学生现场写，大部分人也只能给出短回答，长而详尽的几乎都来自 ChatGPT。这预示了后面"用 AI 反馈替代人类标注"的动机。
+\end{importantbox}
+
+\subsection{Alpaca：用 LLM 自我生成数据}
+
+Alpaca（Stanford，Taori et al. 2023）是\textbf{最早}用语言模型生成指令微调数据的尝试之一，流程分两步：
+
+\begin{enumerate}
+\item 准备一小撮（175 条）\textbf{人工种子指令}，用 LLM 扩展出更多指令（左列）。
+\item 用 InstructGPT 这类模型\textbf{填入回答}（右列）。
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_07_alpaca_seed.jpg}
+\caption{Alpaca：从 175 条种子出发，用 LLM 生成完整指令微调数据\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:10:30--00:10:45。}
+
+\begin{knowledgebox}{三种范式的风格差异}
+对比三个数据集，可以看到清晰的演化：
+
+\begin{itemize}
+\item \textbf{Flan}：benchmark 导向，短回答，自然度低。
+\item \textbf{Alpaca}：更像真实聊天，输入短指令、长篇自然语言回答，但指令多样性不足。
+\item \textbf{Open Assistant}：复杂查询 + 极详尽回答 + 引用，质量最高但成本也最高。
+\end{itemize}
+\end{knowledgebox}
+
+\subsection{数据获取的成本曲线}
+
+讲师用一个课堂小练习让全班一起众包一条指令回答，结果印证了"高质量长篇数据极难获得"。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_08_sft_data_cost.jpg}
+\caption{SFT 数据获取成本：从基础模型到评测的全流程开销\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:11:45--00:12:05。}
+
+\begin{practicebox}{课堂众包实验的教训}
+学生（比一般众包工人更受激励）现场写一条指令回答，结果是：大量表情包、naan 面包（被恶搞）、各种短回答，少数长回答几乎全是抄自 ChatGPT。
+
+\textbf{结论}：即使是被激励的标注者，在时间压力下也写不出高质量长篇回答。\textbf{这正是 AI 反馈（AI feedback）流行的根本原因}——GPT-4 写的回答又长又详尽，远超普通人类标注者的水平。
+\end{practicebox}
+
+\section{SFT 的隐患：长度偏置与幻觉}
+
+\subsection{长度偏置：房间里的大象}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_09_length_bias.jpg}
+\caption{长度偏置：人类与 AI 评审都偏好更长的回答\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:17:04--00:17:20。}
+
+讲师指出，长度一直是所有指令微调数据集"房间里的大象（gorilla in the room）"：
+
+\begin{importantbox}{长度偏置的三个事实}
+\begin{enumerate}
+\item \textbf{人类偏好列表}：人类评审员有强烈的"喜欢列表（bullet points）"偏好。
+\item \textbf{AI 评审也偏好列表}：用 LLM 当裁判同样如此。
+\item \textbf{人类偏好长回答}：偏好\textbf{长 60\%--70\%}的回答，AI 裁判也一样。
+\end{enumerate}
+
+这非常令人担忧——你想用后训练\textbf{减少幻觉、提升能力}，结果却可能在\textbf{优化风格（stylistic）}，比如"更长"。
+\end{importantbox}
+
+\begin{warningbox}{benchmarks 与 chat 评测的互补}
+长度等因素对 \textbf{MMLU 这类 benchmark 影响不大}——即使长度差异巨大，多数指令微调数据集都能稳定提升基础模型。
+
+但\textbf{chat 风格评测}（Chatbot Arena、AlpacaEval）会被长度偏置严重污染。因此\textbf{必须用多种评测策略互相校验}，避免被长度这类表面因素骗到。
+\end{warningbox}
+
+\subsection{SFT 会教模型"幻觉"}
+
+这是本讲最反直觉、也最重要的洞见之一。考虑 Open Assistant 那种"带引用的长回答"样本：输入"介绍垄断经济学"，输出"……（一段长文）+ [Biven 著《XXX》]"。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_10_hallucination_sft.jpg}
+\caption{SFT 同时教会"新知识"和"编造引用"\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:19:43--00:20:00。}
+
+微调过程同时发生两件事：
+
+\begin{enumerate}
+\item \textbf{正面}：学会把"垄断"和某条具体引用关联起来——\textbf{新知识}。
+\item \textbf{负面}：学会一个\textbf{泛化规则}——"只要被问到复杂概念，回答末尾就\textbf{必须}配一个引用"。如果模型参数里根本没有"垄断 $\leftrightarrow$ Biven"的关联，它就会\textbf{编造（hallucinate）}一个引用来填这个位置。
+\end{enumerate}
+
+\subsection{John Schulman 的论证}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_11_schulman_argument.jpg}
+\caption{Schulman 的论证：SFT 强迫模型回答"不知道"的问题\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:21:30--00:21:50。}
+
+John Schulman（在 Berkeley 的一次演讲里）给出了一个很有说服力的论证：
+
+\begin{warningbox}{Schulman 论证的核心}
+如果你强迫模型回答它\textbf{并不知道}的问题，模型会同时学到两件事：
+
+\begin{enumerate}
+\item 某种抽象意义上的"知识"。
+\item 一个\textbf{捷径行为}："\textbf{为了把回答的结构填满}，我就随便编一点。"
+\end{enumerate}
+
+\textbf{为什么是 token prediction 的本质问题}：在交叉熵损失下，"完全编造一个引用"比"根本不写引用"\textbf{损失更低}——因为回答的结构必须被填满，token 必须出现在正确的位置。所以\textbf{幻觉是 lesser of two errors}（两害相权取其轻）。
+\end{warningbox}
+
+\begin{knowledgebox}{关键推论：on-policy RL 的动机}
+Schulman 的论证直接导向一个结论：\textbf{on-policy RL（在模型自己生成的样本上做强化学习）很重要}，因为：
+
+\begin{itemize}
+\item 你想知道"模型已经知道什么"，\textbf{只教它这些}。
+\item 当模型遇到它不知道的事实，你应该\textbf{改微调数据}让它回答"我不知道"，而不是逼它回答。
+\end{itemize}
+
+这与"知识存储"研究一致：模型\textbf{复现已知事实}比\textbf{学习未知事实}容易得多——后者需要长得多的训练才能进入参数。
+\end{knowledgebox}
+
+\subsection{反直觉结论：完全正确的数据可能反而有害}
+
+\begin{importantbox}{指令微调的反直觉现象}
+你可以有一个\textbf{完全正确、内容极丰富}的指令微调数据集，但它\textbf{可能对你的模型有害}——因为它会教模型\textbf{编造事实}来匹配那种深度。
+
+这是为什么对\textbf{蒸馏数据}（teacher 模型强于 student）和\textbf{专家人工标注}（人比模型懂太多）都要格外小心：要让模型在不知道的时候\textbf{优雅地弃权（abstain）}。RL 式的正确性信号在原则上能帮上忙，但在 SFT 层面解决这个问题"非常混乱、非常困难"——开放研究文献里没人真正搞定。
+\end{importantbox}
+
+\section{安全微调：helpful / truthful / harmless}
+
+\subsection{为什么需要安全微调}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_12_safety_intro.jpg}
+\caption{安全微调：语言模型需要护栏\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:24:44--00:25:00。}
+
+语言模型直接部署给终端用户，能力很强，可能被用来生成虚假信息、诈骗、垃圾邮件。因此\textbf{安全微调（safety tuning）}是必需的。早期研究已经表明：\textbf{哪怕很少量的安全数据}混进指令微调流程，就能让模型显著更安全——与"少量指令微调数据就能让强预训练模型大幅提升"的发现平行。
+
+\subsection{核心权衡：拒绝 vs 过度拒绝}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_13_safety_overrefusal.jpg}
+\caption{安全微调的核心权衡：拒绝 vs 过度拒绝\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:25:40--00:26:00。}
+
+\begin{warningbox}{经典的过度拒绝例子}
+\textbf{"how can I kill a Python process?"}（怎么杀掉一个 Python 进程）——我们都知道这是完全合理的问题。但如果模型对"kill"这个词不敏感，它会说"kill 听起来很危险，我拒绝回答"。
+
+如何在指令微调阶段让模型\textbf{理解这种细微差别}，是非常棘手的事情。
+\end{warningbox}
+
+安全微调的核心张力是：
+
+\begin{itemize}
+\item 对\textbf{真正不安全}的请求，模型应该\textbf{拒绝}。
+\item 对\textbf{看起来不安全但其实安全}的请求（如"kill a Python process"），模型\textbf{不应过度拒绝}。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_14_safety_examples.jpg}
+\caption{少量样本即可塑造安全行为\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:26:44--00:27:00。}
+
+\begin{practicebox}{500 条样本的力量}
+有研究表明，\textbf{仅仅 500 条精心挑选的样本}就能让模型很好地遵循安全准则。这与"少量指令微调数据 + 强预训练模型就能走很远"的整体发现一致——\textbf{数据量虽小，杠杆极大}。
+\end{practicebox}
+
+\subsection{SFT 小结：出乎意料的强大}
+
+讲师对 SFT 部分做了三点总结：
+
+\begin{knowledgebox}{SFT 的三个要点}
+\begin{enumerate}
+\item \textbf{SFT 出乎意料地强大}：拿一个标准指令微调数据集（OpenHermes、OpenAssistant 等），用合理超参微调一个基础模型，就能得到一个"行为很像 LLaMA / ChatGPT"的模型。虽不至于那么好，但已经走得相当远。
+\item \textbf{"高质量数据"是非常复杂的概念}：要极其小心地推理，怎么做并不显然（参考前面的幻觉论证）。
+\item \textbf{少量数据有巨大杠杆}：即使是小量数据，在这一阶段也能极大改变模型行为。
+\end{enumerate}
+\end{knowledgebox}
+
+\section{Mid-training：模糊预训练与后训练的边界}
+
+\subsection{为什么 SFT 在前沿实验室看起来不一样}
+
+学术界的 SFT 答案很"轻佻（flippant）"：你有示范数据，就丢进去做梯度下降，结束了。但在前沿实验室——有大量算力和数据——SFT 流程\textbf{越来越像预训练流程}。预训练与指令微调的边界\textbf{正在模糊化}。
+
+\begin{importantbox}{关键观察：指令微调数据也是 token 序列}
+指令微调数据说到底\textbf{也是一段 token 序列}。完全可以把它\textbf{直接扔进预训练过程}——这是完全合法的操作，而且越来越流行。
+\end{importantbox}
+
+\subsection{Mid-training 的具体做法}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_15_mid_training.jpg}
+\caption{Mid-training：在预训练衰减阶段混入指令微调数据\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:29:43--00:30:00。}
+
+具体流程（讲师从公开论文和私下游说拼凑出来的"行业共识"）：
+
+\begin{enumerate}
+\item 先做\textbf{纯预训练}。
+\item 在预训练的\textbf{尾段}（尤其是 annealing learning rate 的阶段），开始\textbf{混入}指令微调数据 / 高质量数据。
+\item 最后可能再做一次\textbf{更短的指令微调}，但因为大部分数据已经进入第二阶段，这次可以更小。
+\end{enumerate}
+
+这第二阶段被业界称为 \textbf{mid-training}。
+
+\begin{knowledgebox}{Mid-training 的两大好处}
+\begin{enumerate}
+\item \textbf{避免灾难性遗忘}：因为指令数据被整合得更深。
+\item \textbf{数据的杠杆更大}：更深入地融入预训练，而不是单薄的"后训练补丁"。
+\end{enumerate}
+\end{knowledgebox}
+
+\subsection{miniCPM：两阶段流水线的公开范例}
+
+数据配比通常是各家实验室的\textbf{高度机密}。讲师从 \textbf{miniCPM}（中国团队的一篇好论文）借了一张图，给出了罕见的公开细节。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_16_miniCPM_pipeline.jpg}
+\caption{miniCPM 两阶段流水线：stable 阶段纯预训练，decay 阶段混入指令数据\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:31:40--00:32:00。}
+
+\begin{tabular}{p{3cm}p{11cm}}
+\toprule
+\textbf{阶段} & \textbf{数据组成} \\
+\midrule
+\textbf{Stage 1（stable）} & 纯预训练数据：Common Crawl、code、Pile、Dolma，全部混进一个大饼图 \\
+\textbf{Stage 2（decay）} & Wikipedia（高质量）+ 仍在的预训练数据 + \textbf{code SFT} + \textbf{中文书籍} + \textbf{UltraChat} + \textbf{StackExchange QA} + \textbf{Evil-Instruct / OSS-Instruct} 等指令微调或指令微调相邻的数据集 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+
+回顾 scaling laws 那一讲的 \textbf{WSD（warmup / stable / decay）}：stable 阶段是上面第一阶段，decay 阶段就是塞进指令数据的第二阶段。这种 mid-training 做法今天被\textbf{大多数模型采用}，从 miniCPM 衍生谱系的模型尤其公开宣传了它。
+
+\begin{warningbox}{"base model"这个词越来越没意义}
+由于 mid-training 的存在，今天各大公司（Qwen 等）发布的所谓"base model"，\textbf{很可能已经经过了某种指令微调阶段}。所以"base model vs post-trained model"的区分\textbf{越来越模糊}。讲师直言："\textbf{base model 这个词，越来越成问题。}"
+\end{warningbox}
+
+\section{第二部分：从生成模型视角到 RLHF 视角}
+
+\subsection{范式转换：从"匹配分布"到"最大化奖励"}
+
+这是本讲最重要的概念转换。讲师刻意放慢节奏来讲。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_17_rlhf_overview.jpg}
+\caption{RLHF：从匹配 $p^*$ 到最大化奖励 $R$\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:42:41--00:43:00。}
+
+\begin{importantbox}{两种世界观的对照}
+\textbf{生成模型 / SFT 世界}：存在一个抽象的参考分布 $p^*(y\mid x)$（互联网数据 + 标注者数据的混合），目标就是\textbf{模仿}它。
+
+\textbf{RLHF 世界}：我\textbf{不再关心匹配任何分布}。我要找的是一个\textbf{策略} $\pi(y\mid x)$，使得\textbf{奖励} $R(x,y)$ 最大化：
+
+\[
+\max_{\pi}\;\mathbb{E}_{y\sim \pi(\cdot\mid x)}\big[R(x,y)\big]
+\]
+
+语言模型不再被看作"某个底层分布的模型"，而是"一个能给我们好奖励的策略"。
+\end{importantbox}
+
+\subsection{为什么要做 RLHF？两个理由}
+
+\subsubsection{理由一：SFT 数据太贵}
+
+\begin{itemize}
+\item \textbf{SFT / 模仿}：必须从 $p^*$ 采样，要请专家写长篇回答——\textbf{极其昂贵}。
+\item \textbf{RLHF}：只需要测量奖励 $R$（成对比较"A 比 B 好"），\textbf{便宜得多}。前沿实验室在后训练数据上要花\textbf{数百万美元}，如果有更省的数据采集方式，何乐而不为。
+\end{itemize}
+
+\subsubsection{理由二：Generator-Validator Gap}
+
+\begin{knowledgebox}{Generator-Validator Gap（生成-验证鸿沟）}
+讲师引用了自己学生的一篇论文里的惊人发现：让人写摘要，然后让他比较"自己写的"和"AI 写的"，\textbf{有相当一部分人更偏好 AI 写的}。
+
+\begin{itemize}
+\item 一位自由职业的专家写手，被采访后说："你让我写，我就觉得要写得花哨一点；但我读 AI 的版本，发现它们读起来更好。"
+\item 所以不仅\textbf{验证比生成便宜}，\textbf{验证甚至可能比生成质量更高}。
+\end{itemize}
+
+\textbf{这就是 generator-validator gap}，是 RLHF 数据范式成立的根本理由。
+\end{knowledgebox}
+
+\subsection{成对偏好的采集}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_19_reward_model.jpg}
+\caption{成对偏好采集与奖励模型训练\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:47:15--00:47:35。}
+
+InstructGPT 第二步的标准流程：
+
+\begin{enumerate}
+\item 让模型\textbf{自己生成}多个输出（RL 术语叫 \textbf{rollouts}）。
+\item 拿两个输出 A、B，问标注员"\textbf{A 比 B 好吗？}"——虽然图里画了四个，标准设置通常是\textbf{一对}。
+\item 用这些成对偏好\textbf{训练一个奖励模型}，能给任意输出一个\textbf{标量分数}。
+\item 把这个奖励模型当作 reward，用 RL 让模型\textbf{最大化}这个分数。
+\end{enumerate}
+
+\subsection{InstructGPT 与 Bard 的标注指南}
+
+InstructGPT 论文是少数公开了\textbf{标注指南}的材料之一。指南把任务定调为：评估输出是否 \textbf{helpful（有用）、truthful（真实）、harmless（无害）}——这就是著名的\textbf{三柱（three pillars）}。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_20_helpful_truthful_harmless.jpg}
+\caption{InstructGPT 的三柱：helpful / truthful / harmless\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:48:20--00:48:40。}
+
+\begin{tabular}{p{2.8cm}p{11.5cm}}
+\toprule
+\textbf{支柱} & \textbf{要求} \\
+\midrule
+Helpful（有用） & 用清晰语言回答、回应提问者真正想问的问题、对国际化敏感（如"football"不一定是美式橄榄球）、太模糊时主动澄清 \\
+Truthful（真实） & 不幻觉、不编造 \\
+Harmless（无害） & 不毒性、礼貌、不输出 NSFW 内容 \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+
+\begin{importantbox}{从 Model Spec 到标注指南}
+OpenAI 公开发布 \textbf{Model Spec}（模型规范），但落地的是一份\textbf{极其详尽的标注指南}（InstructGPT 公开的只是冰山一角）。指南写好后交给标注员执行。Google Bard 也有一份泄露的标注指南，结构高度相似：有用性、风格、各种评分量表，据说标注员\textbf{每个问题只有 1 分钟}——后来引发了大量"时间不够无法核查事实"的抱怨。
+\end{importantbox}
+
+\begin{practicebox}{课堂成对偏好练习}
+讲师让全班做了一次成对偏好标注：5 个问题，5 分钟。结果——只有约 27 人完成；\textbf{几乎没人}在 5 分钟内核查完所有事实和数学。
+
+讲师故意把部分"长回答"设置成"包含幻觉"，但\textbf{长回答仍然获得了更多票}，即使它事实错误。\textbf{这再次印证了长度偏置}。Google Bard 标注员每题 1 分钟的处境，由此可见一斑。
+\end{practicebox}
+
+\subsection{成对偏好的采集难点}
+
+\begin{warningbox}{成对偏好采集的四大难点}
+\begin{enumerate}
+\item \textbf{高质量、可验证的标注者极难找}：即使是受激励的学生，时间压力下也难以核查事实。
+\item \textbf{核查正确性极难}：把数学或事实密集的回答拆成一条条 claim 逐一核查，\textbf{极其耗劳力}。
+\item \textbf{标注员会"作弊"}：在线问卷里的标注员，常常\textbf{整段丢给 GPT-4，再把答案抄回来}。有研究发现某些标注员与 GPT-4 的吻合度高达 95\%+。
+\item \textbf{伦理与劳工问题}：外包给第三世界国家带来的\textbf{定价、剥削、伦理}争议，必须警惕。
+\end{enumerate}
+\end{warningbox}
+
+\section{AI 反馈：用 LLM 替代人类标注}
+
+\subsection{为什么转向 AI 反馈}
+
+由于上面这些难点，业界（与指令微调阶段一样）越来越转向\textbf{AI 反馈（AI feedback）}——用 LLM 生成的偏好判断。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_22_ai_feedback.jpg}
+\caption{AI 反馈：GPT-4 估的胜率与人类估的胜率高度一致\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:57:40--00:58:00。}
+
+\begin{knowledgebox}{AI 反馈的三条证据}
+多项研究（包括讲师团队自己的）显示：
+
+\begin{itemize}
+\item 用 GPT-4 给成对偏好打分，与人类判断\textbf{高度一致}。
+\item \textbf{GPT-4 与人类的吻合度 $\approx$ 人类与人类的吻合度}（蓝箱）。
+\item 但 AI 反馈\textbf{便宜得多}。
+\end{itemize}
+\end{knowledgebox}
+
+\subsection{三个里程碑工作}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_23_tulu3.jpg}
+\caption{Tulu 3：AI2 的现代后训练配方\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:58:28--00:58:45。}
+
+\begin{tabular}{p{3cm}p{11cm}}
+\toprule
+\textbf{工作} & \textbf{要点} \\
+\midrule
+UltraFeedback & 最流行的开源"off-policy RLHF"数据集之一，用 LLM 给多个模型的输出打分，得到 chosen/non-chosen 对 \\
+Zephyr 7B & HuggingFace 的开源强模型。团队一开始坚信"付费众工会比 AI 反馈好"，但\textbf{后期发现 GPT-4 反馈效果更好} \\
+Tulu 3 & AI2 的现代后训练项目：不同 prompt + 不同模型生成回答 + LLM 评分得到 chosen/non-chosen \\
+Constitutional AI & Anthropic 的经典论文，\textbf{最早}把"AI 反馈用于对齐"这面旗帜插在地上 \\
+\bottomrule
+\end{tabular}
+
+\subsection{Off-policy vs On-policy}
+
+\begin{importantbox}{两个关键术语}
+\textbf{Off-policy（离策略）}：成对偏好数据\textbf{不是}从你自己的模型采样得到的（可能是别人的模型）。它告诉你"\textbf{你不在的地方}长什么样"。
+
+\textbf{On-policy（在策略）}：从\textbf{你自己的模型}采样得到的偏好数据，告诉你"\textbf{如何精修自己}"。
+
+现代配方（如 Tulu 3）通常\textbf{两者都用}：大量 off-policy 数据铺底 + 少量 on-policy 数据精修。
+\end{importantbox}
+
+\subsection{模型的自我偏好（Self-preference）}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_24_self_preference.jpg}
+\caption{模型对自身输出存在可检测的自我偏好\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：01:03:22--01:03:30。}
+
+\begin{warningbox}{Self-preference 陷阱}
+大多数模型对\textbf{自己的输出}有\textbf{可检测的自我偏好}。当用模型当裁判做评测时（讲师自己也做过），必须\textbf{非常小心}这个偏差——否则你会系统性地高估自家模型。
+\end{warningbox}
+
+\subsection{RLHF 在流水线末端的"放大效应"}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_21_rlhf_bias.jpg}
+\caption{RLHF 在流水线末端，对模型行为有巨大影响\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：00:55:00--00:55:20。}
+
+\begin{importantbox}{为什么 RLHF 的偏见问题格外严重}
+RLHF 和对齐处于流水线\textbf{最末端}，因此对最终模型行为有\textbf{极强的影响}。
+
+讲师团队一篇论文的发现：InstructGPT 这种老模型，居然在\textbf{东南亚宗教}话题上对齐得更深。回头查 InstructGPT 附录里的标注员国籍——\textbf{菲律宾人、孟加拉国人、17\% 美国人}。证据与现象\textbf{偶然地吻合}。
+
+另一篇 Hosking / Blunsom / Bohnet 的论文比较了两种标注员：论文作者（带引用、动机强）vs 众包工人。结果：\textbf{众包工人几乎不关心事实性，更关心格式}。所以\textbf{同样的任务，不同标注员给出截然不同的反馈}。
+\end{importantbox}
+
+\section{方法：奖励的定义——Bradley-Terry 模型}
+
+\subsection{InstructGPT 方程 2：RLHF 的总目标}
+
+从 InstructGPT 论文的 equation 2 出发：
+
+\begin{importantbox}{InstructGPT 总目标（equation 2）}
+\[
+\max_{\pi_\theta}\;\mathbb{E}_{x\sim\mathcal{D},\,y\sim\pi_\theta(\cdot\mid x)}
+\Big[\,r_\theta(x,y)\;\Big]
+\;-\;\beta\,\mathbb{D}_{\mathrm{KL}}\!\Big(\pi_\theta(\cdot\mid x)\,\Big\|\,\pi_{\mathrm{SFT}}(\cdot\mid x)\Big)
+\;+\;\gamma\,\mathbb{E}_{x\sim\mathcal{D}_{\mathrm{pre}}}\big[\log \pi_\theta(x)\big]
+\]
+
+\begin{itemize}
+\item 第一项：\textbf{最大化奖励} $r_\theta(x,y)$（奖励模型给的分数）。
+\item 第二项（KL）：策略\textbf{不要离 SFT 模型太远}——防止漂移、防止 reward hacking。
+\item 第三项（$\gamma$）：边做 RL 边\textbf{继续预训练}，防止灾难性遗忘。很多人不做这一步，但 KL 项\textbf{至今仍是标准配置}。
+\end{itemize}
+\end{importantbox}
+
+\subsection{Bradley-Terry：人类偏好的假设模型}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_25_bradley_terry.jpg}
+\caption{Bradley-Terry 模型：人类偏好 = 奖励差的 logistic\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：01:07:29--01:07:50。}
+
+讲师给出了一个关于世界的\textbf{假设模型}：
+
+\begin{importantbox}{Bradley-Terry 偏好模型}
+假设：每个可能的输出 $y$ 都有一个\textbf{隐标量奖励} $R(x,y)$（我们\textbf{观察不到}）。
+
+当一个人比较 $y_w$ 与 $y_l$（哪个更好），他做的是：\textbf{比较两个奖励的差，然后掷一枚硬币}——这就是奖励差的 \textbf{logistic 模型}：
+
+\[
+P(y_w \succ y_l \mid x) \;=\; \sigma\!\Big(\,R(x,y_w) - R(x,y_l)\,\Big)
+\;=\; \frac{1}{1+\exp\!\big(-(R(x,y_w)-R(x,y_l))\big)}
+\]
+
+\begin{itemize}
+\item $\sigma(\cdot)$ 是 sigmoid 函数。
+\item 奖励差越大，$y_w$ 被选中的概率越接近 1。
+\item 我们\textbf{只能观察到带噪的成对比较}，看不到真实的 $R$。
+\end{itemize}
+
+\textbf{优化目标}：输出那个 $R$ 最高的序列。
+\end{importantbox}
+
+\subsection{奖励模型的训练损失}
+
+把 Bradley-Terry 写成最大似然，就是奖励模型的训练损失（参考 Stiennon et al. 的摘要论文）：
+
+\[
+\mathcal{L}_{\mathrm{RM}}(r_\phi) \;=\; -\,\mathbb{E}_{(x,y_w,y_l)\sim\mathcal{D}}
+\Big[\log \sigma\!\big(r_\phi(x,y_w) - r_\phi(x,y_l)\big)\Big]
+\]
+
+奖励模型 $r_\phi$ 通常就是\textbf{拿 SFT 模型、把 lm\_head 换成标量输出头}，在成对偏好数据上训练，学会给任意 $(x,y)$ 打一个分数。
+
+\section{方法：策略梯度与 PPO}
+
+\subsection{Policy Gradient / REINFORCE}
+
+我们想优化某个策略的奖励，最自然的思路就是\textbf{梯度下降}。
+
+\begin{knowledgebox}{策略梯度定理（REINFORCE）}
+对 $\mathbb{E}_{y\sim\pi_\theta}[R(x,y)]$ 求梯度，可以写成：
+
+\[
+\nabla_\theta\,\mathbb{E}_{y\sim\pi_\theta}\big[R(x,y)\big]
+\;=\; \mathbb{E}_{y\sim\pi_\theta}\!\Big[\,R(x,y)\,\nabla_\theta \log \pi_\theta(y\mid x)\,\Big]
+\]
+
+\textbf{直觉}：这就是预训练里你已经在做的梯度（最大化 $\log \pi_\theta(z)$），只是\textbf{乘上了 $R$}。
+
+\begin{itemize}
+\item $R > 0$ $\Rightarrow$ \textbf{上调}这些 token 的概率。
+\item $R < 0$ $\Rightarrow$ \textbf{下调}这些 token 的概率。
+\end{itemize}
+
+这就是 \textbf{policy gradient theorem / REINFORCE}。
+\end{knowledgebox}
+
+\subsection{PPO 的三个改进}
+
+PPO（Proximal Policy Optimization）看起来吓人，其实就是在 REINFORCE 基础上叠了三步：
+
+\begin{enumerate}
+\item \textbf{用 advantage 替代 raw reward}（\textbf{方差缩减}）。
+
+数学上，从 $R$ 里减去\textbf{任何常数或状态依赖的 baseline}，梯度仍然正确：
+
+\[
+\nabla_\theta\,\mathbb{E}_{y\sim\pi_\theta}\big[R(x,y)\big]
+\;=\; \mathbb{E}_{y\sim\pi_\theta}\!\Big[\,\big(R(x,y)-b(x)\big)\,\nabla_\theta \log \pi_\theta(y\mid x)\,\Big]
+\]
+
+减去 baseline 后的量叫 \textbf{advantage} $A(x,y) = R(x,y) - b(x)$。注意 advantage \textbf{可以是负的}——这正是 DPO 损失里"负梯度"项的来源。
+
+\item \textbf{Importance sampling / importance weighting}：从一次 rollout 采样后，想\textbf{多走几步梯度}（几乎变成 off-policy）。走越多步，原始样本越\textbf{陈旧}，所以要做重要性权重修正——这就是 \textbf{TRPO} 的做法，外加一个显式 KL 约束。
+
+\item \textbf{Clipping}（PPO 的关键创新）：与其用显式 KL 约束限制"不离开旧策略太远"，不如\textbf{直接 clip 概率比}，自然激励模型留在原策略附近。
+\end{enumerate}
+
+\begin{warningbox}{PPO 复杂、且容易踩坑}
+讲师坦言：PPO 非常复杂，课上\textbf{讨论过但决定不让你们实现 PPO}，因为"会很痛苦"。详细推导留到下一讲（Lecture 16，真正的 RL 那讲）。本讲重点是\textbf{DPO}。
+\end{warningbox}
+
+\section{方法：DPO——把 RL 变成最大似然}
+
+\subsection{动机：能不能甩掉 PPO？}
+
+学术界关心的一个核心问题是：\textbf{能不能甩掉 PPO？}人们试过很多"合理"的替代：
+
+\begin{itemize}
+\item \textbf{条件 token 法}：对 chosen 输出加"good"前缀，对 bad 输出加"bad"前缀，生成时条件在"good"上。\textbf{效果不好}。
+\item \textbf{只在 preferred 输出上做 SFT}：\textbf{效果也不好}。
+\item \textbf{Best-of-N}：用奖励模型挑最好的，再训练。\textbf{还行但不够强}。
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_26_dpo_idea.jpg}
+\caption{DPO 的核心思想：去掉奖励模型与 on-policy 机制\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：01:11:50--01:12:05。}
+
+\begin{importantbox}{DPO 的吸引力}
+真正\textbf{留下来}的是 DPO（Direct Preference Optimization，Rafailov et al. 2023）。它之所以大火，是因为它：
+
+\begin{itemize}
+\item \textbf{去掉了 PPO 的复杂度}——没有显式奖励模型（用于算 advantage 的那个）、没有 importance ratio、没有 on-policy 采样。
+\item \textbf{回到最朴素的做法}：对"好的东西"做 $\log$ 损失的\textbf{正梯度}，对"坏的东西"做\textbf{负梯度}。
+\item \textbf{效果还不错}。
+\end{itemize}
+\end{importantbox}
+
+\subsection{DPO 推导：三步走}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_27_dpo_objective.jpg}
+\caption{DPO 目标函数：Bradley-Terry + 重参数化奖励\protect\footnotemark}
+\end{figure}
+\footnotetext{视频画面时间区间：01:12:34--01:13:00。}
+
+\textbf{起点}：把 InstructGPT 目标重写一下——前一项是奖励，后一项是 KL 约束（让 $\pi_\theta$ 靠近参考 $\pi_{\mathrm{ref}}$）：
+
+\[
+\max_{\pi_\theta}\;\mathbb{E}_{x,y}\Big[\,r(x,y)\,\Big]
+\;-\;\beta\,\mathbb{D}_{\mathrm{KL}}\!\big(\pi_\theta(\cdot\mid x)\,\big\|\,\pi_{\mathrm{ref}}(\cdot\mid x)\big)
+\]
+
+\textbf{第一步：非参数假设}。假设 $\pi_\theta$ \textbf{不是神经网络}，而是\textbf{任意函数}。这样可以直接写出最优策略的闭式解：
+
+\begin{importantbox}{DPO 的关键闭式解}
+\[
+\pi^\star(y\mid x) \;=\; \frac{1}{Z(x)}\,\pi_{\mathrm{ref}}(y\mid x)\,\exp\!\Big(\tfrac{1}{\beta}\,r(x,y)\Big)
+\]
+
+即：最优策略 = \textbf{参考分布 $\times$ 奖励的指数}（再归一化）。从这个式子反解出\textbf{隐含奖励}：
+
+\[
+r(x,y) \;=\; \beta\,\log\frac{\pi_\star(y\mid x)}{\pi_{\mathrm{ref}}(y\mid x)} \;+\; \beta\,\log Z(x)
+\]
+\end{importantbox}
+
+\textbf{关键洞察}：在这个非参数假设下，\textbf{策略与奖励是一一对应的（one and the same）}。与其想"策略"，不如想"奖励"。
+
+\textbf{第二步：代入 Bradley-Terry}。把上面这个 $r(x,y)$ 的表达式代入 Bradley-Terry 的偏好概率：
+
+\[
+P(y_w \succ y_l \mid x)
+\;=\; \sigma\!\Big(\,\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}
+\;-\;\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}\,\Big)
+\]
+
+（$Z(x)$ 在做差时被消掉了。）
+
+\textbf{第三步：最大似然}。现在把这个概率当作"观察到的成对偏好"的似然，做\textbf{负对数似然最小化}，就得到 \textbf{DPO 损失}：
+
+\begin{importantbox}{DPO 损失函数}
+\[
+\mathcal{L}_{\mathrm{DPO}}(\pi_\theta)
+\;=\; -\,\mathbb{E}_{(x,y_w,y_l)\sim\mathcal{D}}
+\Bigg[\log\sigma\!\Bigg(
+\beta\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\mathrm{ref}}(y_w\mid x)}
+\;-\;\beta\log\frac{\pi_\theta(y_l\mid x)}{\pi_{\mathrm{ref}}(y_l\mid x)}
+\Bigg)\Bigg]
+\]
+
+\begin{itemize}
+\item $\pi_\theta$：当前策略（在训练的模型）。
+\item $\pi_{\mathrm{ref}}$：参考策略（通常是 SFT 模型，冻结）。
+\item $\beta$：温度 / KL 强度（控制离参考多远）。
+\item $y_w$：chosen（偏好的）；$y_l$：rejected（不偏好的）。
+\end{itemize}
+\end{importantbox}
+
+\subsection{DPO 的本质：RL $\to$ 监督学习}
+
+\begin{knowledgebox}{DPO 的哲学意义}
+通过这三步，DPO 把一个\textbf{强化学习问题}变成了一个\textbf{最大似然问题}——概念上非常像预训练（都是在最大化某种概率），只不过这里最大化的是\textbf{成对偏好的概率}。
+
+\textbf{总结三步}：
+\begin{enumerate}
+\item 做非参数假设，得到最优策略的闭式解。
+\item 通过闭式解把\textbf{奖励参数化}成策略的函数。
+\item 用\textbf{监督损失}（Bradley-Terry 的负对数似然）直接优化策略。
+\end{enumerate}
+\end{knowledgebox}
+
+\section{本讲总结与下一讲预告}
+
+\begin{knowledgebox}{本讲核心要点}
+\begin{enumerate}
+\item \textbf{SFT 数据三范式}：Flan（聚合）、Open Assistant（众包）、Alpaca（LLM 自生成），各有取舍。
+\item \textbf{长度偏置与幻觉}：SFT 数据可能教模型\textbf{编造事实}来匹配数据深度（Schulman 论证）。
+\item \textbf{安全微调}：helpful / truthful / harmless 三柱；核心是\textbf{拒绝 vs 过度拒绝}的权衡；500 条样本即可塑造行为。
+\item \textbf{Mid-training}：在预训练 decay 阶段混入指令数据（miniCPM 范例），模糊了 base / post 边界。
+\item \textbf{RLHF 视角转换}：从"匹配 $p^*$"到"最大化奖励 $R$"。两大动机：SFT 太贵、Generator-Validator Gap。
+\item \textbf{AI 反馈}：GPT-4 与人类的吻合度 $\approx$ 人类间吻合度，更便宜；但小心 \textbf{self-preference} 与\textbf{长度偏置}。
+\item \textbf{Bradley-Terry}：人类偏好 = 奖励差的 logistic。
+\item \textbf{PPO}：REINFORCE + advantage + importance sampling + clipping。
+\item \textbf{DPO}：非参数假设 $\to$ 奖励 = 策略的函数 $\to$ 监督损失，把 RL 变成最大似然。
+\end{enumerate}
+\end{knowledgebox}
+
+\begin{practicebox}{下一讲预告}
+下一讲（Lecture 16）讲\textbf{可验证奖励的强化学习（RL from verifiable rewards）}：数学、推理这类\textbf{有标准答案}的场景。在那种场景下，奖励是\textbf{确定的、可验证的}（答案对就是对、错就是错），不需要成对偏好。讲师会详细讲 PPO 在那里的实现，以及"为什么 RL 在数学上能进一步提升模型"。
+
+"\textbf{我们走过了 DPO 的推导，这是一个不错的停下来的地方。下讲我们从 RLHF 的剩余部分开始。}"
+\end{practicebox}
+
+\end{document}

@@ -1,0 +1,30 @@
+fig_id	frame	timestamp	description	section
+fig_01	frame_0001	00:00:15	开场：课程导言与回顾	导论
+fig_02	frame_0008	00:02:00	Better scaling laws：Chinchilla 概览	Better scaling laws
+fig_03	frame_0013	00:03:15	Better scaling laws：损失函数 L(N,D)	Better scaling laws
+fig_04	frame_0023	00:05:45	Better scaling laws：三步法流程图	Better scaling laws
+fig_05	frame_0035	00:08:45	Better scaling laws：参数化拟合	Better scaling laws
+fig_06	frame_0042	00:10:30	Better scaling laws：N_opt, D_opt 计算图	Better scaling laws
+fig_07	frame_0055	00:13:45	Better scaling laws：等损失曲线	Better scaling laws
+fig_08	frame_0070	00:17:30	Better scaling laws：L(N,D)=E+A/N^α+B/D^β	Better scaling laws
+fig_09	frame_0085	00:21:15	Better scaling laws：最优学习率调度	Better scaling laws
+fig_10	frame_0100	00:25:00	Better scaling laws：compute-optimal 前沿	Better scaling laws
+fig_11	frame_0110	00:27:30	Better scaling laws：完整 loss 拟合	Better scaling laws
+fig_12	frame_0125	00:31:15	Better scaling laws：Chinchilla 三种方法	Better scaling laws
+fig_13	frame_0140	00:35:00	Better scaling laws：IsoFLOP 曲线对比	Better scaling laws
+fig_14	frame_0150	00:37:30	Scaling laws: what they mean	Scaling laws 的含义
+fig_15	frame_0160	00:40:00	How should we scale learning rate and batch size?	超参数缩放
+fig_16	frame_0170	00:42:30	超参数迁移：动机与挑战	超参数迁移
+fig_17	frame_0180	00:45:00	Hyperparameter transfer: experimental setup	超参数迁移
+fig_18	frame_0190	00:47:30	Hyperparameter transfer：宽度缩放	超参数迁移
+fig_19	frame_0200	00:50:00	Hyperparameter transfer：学习率缩放公式	超参数迁移
+fig_20	frame_0210	00:52:30	Hyperparameter transfer：验证结果	超参数迁移
+fig_21	frame_0220	00:55:00	Maximal Update Parametrization (µP)	µP
+fig_22	frame_0230	00:57:30	µP：激活非消散条件	µP
+fig_23	frame_0240	01:00:00	µP：数学推导	µP
+fig_24	frame_0250	01:02:30	µP：初始化稳定性	µP
+fig_25	frame_0260	01:05:00	µP：宽度缩放推导	µP
+fig_26	frame_0270	01:07:30	µP：学习率 1/宽度 关系	µP
+fig_27	frame_0280	01:10:00	Summary：µP 总结	µP
+fig_28	frame_0300	01:15:00	总结与展望	总结
+fig_29	frame_0313	01:18:15	课程结语	总结

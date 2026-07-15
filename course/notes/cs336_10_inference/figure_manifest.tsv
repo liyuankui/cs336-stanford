@@ -1,0 +1,33 @@
+fig_00_intro	frame_0009	00:01:45	00:02:15	课程引言：为什么推理（inference）很重要
+fig_01_metrics	frame_0017	00:03:45	00:04:15	推理性能关键指标：TTFT、延迟、吞吐、成本
+fig_02_notation	frame_0027	00:06:20	00:06:50	统一符号定义：B 批、T 生成长度、S 上下文、V 词表、D 隐藏维度
+fig_03_matmul	frame_0035	00:08:15	00:08:45	矩阵乘法的 FLOPs 与字节量推导
+fig_04_h100	frame_0045	00:10:45	00:11:15	H100 的算力带宽与算术强度阈值（roofline）
+fig_05_b1mem	frame_0051	00:12:25	00:12:55	B=1 时推理是显存带宽受限（memory-bound）
+fig_06_naive	frame_0063	00:15:15	00:15:45	朴素实现：每步重算所有注意力的冗余
+fig_07_kvcache	frame_0067	00:16:25	00:16:55	KV cache 示意：缓存键值避免重算
+fig_08_twostages	frame_0073	00:17:45	00:18:15	推理两阶段：预填充（prefill）与解码（decode）
+fig_09_prefill	frame_0087	00:21:15	00:21:45	预填充阶段是计算受限（compute-bound）
+fig_10_attnst	frame_0097	00:23:55	00:24:25	注意力算术强度 ~ ST/(S+T)
+fig_11_attn1	frame_0104	00:25:35	00:26:05	解码时注意力强度趋于常数 1（与序列长度无关）
+fig_12_llama2	frame_0117	00:28:45	00:29:15	Llama2 配置与推理性能手算（napkin math）
+fig_13_batch	frame_0131	00:32:15	00:32:45	批量大小对延迟与吞吐的权衡
+fig_14_oomb256	frame_0136	00:33:35	00:34:05	B=256 时 KV cache 把显存撑爆（OOM）
+fig_15_parallel	frame_0139	00:34:25	00:34:55	复制与张量并行：跨卡扩展吞吐
+fig_16_overviewarch	frame_0149	00:36:45	00:37:15	改造架构以降低推理成本：总览
+fig_17_mha	frame_0157	00:38:45	00:39:15	标准多头注意力（MHA）的 KV cache 成本
+fig_18_mqa	frame_0163	00:40:15	00:40:45	MQA：所有查询共享一组 KV
+fig_19_gqa	frame_0171	00:42:15	00:42:45	GQA：查询分组共享 KV（Llama2-70B 等采用）
+fig_20_mla	frame_0179	00:44:15	00:44:45	MLA（DeepSeek）：低秩压缩 KV 进一步降本
+fig_21_local	frame_0197	00:48:45	00:49:15	局部/滑动窗口注意力 + CLA 跨层共享 KV
+fig_22_ssm	frame_0215	00:53:15	00:53:45	状态空间模型（SSM / Mamba）：常数状态大小的替代架构
+fig_23_linear	frame_0235	00:58:15	00:58:45	线性注意力（Linear Attention）与核化注意力
+fig_25_quant	frame_0263	01:05:15	01:05:45	量化（Quantization）：用更低精度存储权重
+fig_26_int8	frame_0273	01:07:45	01:08:15	INT8 量化与异常值的处理难题
+fig_27_distill	frame_0279	01:09:15	01:09:45	蒸馏与剪枝：从大模型蒸馏到小模型
+fig_28_spec	frame_0287	01:11:15	01:11:45	投机解码（Speculative Decoding）：草稿模型 + 验证
+fig_29_reject	frame_0299	01:14:15	01:14:45	投机解码 = 拒绝采样（rejection sampling），保证与原分布完全一致
+fig_30_contbatch	frame_0313	01:17:45	01:18:15	连续批处理（Continuous Batching）：请求级动态调度
+fig_31_paged	frame_0319	01:19:15	01:19:45	PagedAttention（vLLM）：把 KV cache 组织为虚拟内存页表
+fig_32_cow	frame_0323	01:20:15	01:20:45	写时复制（copy-on-write）：多请求共享前缀 KV
+fig_33_concl	frame_0327	01:21:15	01:21:45	本讲总结：算术强度框架贯穿所有推理优化技术

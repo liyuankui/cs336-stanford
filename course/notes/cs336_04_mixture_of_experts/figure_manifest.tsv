@@ -1,0 +1,30 @@
+figure	frame	start	end	topic
+fig_01_what_is_moe	frame_0004	00:00:45	00:01:15	讲座开篇：什么是 Mixture of Experts，本讲提纲
+fig_02_moe_motivation	frame_0008	00:01:45	00:02:15	为什么需要 MoE：DeepSeek/Grok/Gemini 都采用 MoE 架构
+fig_03_moe_definition	frame_0010	00:02:15	00:02:45	MoE 定义：条件计算，参数被稀疏激活
+fig_04_dense_vs_sparse	frame_0014	00:03:15	00:03:45	Dense 模型 vs Sparse MoE 模型结构对比（Fedus 2022）
+fig_05_dense_vs_sparse_loss	frame_0016	00:03:45	00:04:15	Dense 与 Sparse 模型在相同训练算力下的 loss 曲线对比
+fig_06_deepseek_v2_perf	frame_0028	00:06:45	00:07:15	DeepSeek V2 在更少激活参数下达到强性能
+fig_07_expert_parallel	frame_0030	00:07:15	00:07:45	专家并行（expert parallelism）：不同专家分布在不同设备
+fig_08_upcycling	frame_0040	00:09:45	00:10:15	Upcycling：把 dense 模型复制切分成 MoE 的初始化技巧（Qwen1.5）
+fig_09_where_to_sparsify	frame_0044	00:10:45	00:11:15	在 Transformer 哪一层做稀疏化（通常 FFN，也可做 attention）
+fig_10_router_attention	frame_0085	00:21:00	00:21:30	Router 与 attention 操作的类比：内积 + softmax
+fig_11_router_equation	frame_0079	00:19:30	00:20:00	Token-choice 路由方程：router 对每个 token 选 top-k 专家
+fig_12_router_weights	frame_0088	00:21:45	00:22:15	Router 权重是否乘到专家输出的讨论
+fig_13_gshard_switch_stmoe	frame_0128	00:31:45	00:32:15	经典 MoE 模型谱系：GShard/Switch Transformer/ST-MoE
+fig_14_fine_grained_expert	frame_0134	00:33:00	00:33:30	Fine-grained experts：把一个大 FFN 切成更多更小的专家
+fig_15_shared_expert	frame_0138	00:34:00	00:34:30	Shared expert：始终激活的共享专家负责通用知识
+fig_16_shared_expert_ablation	frame_0141	00:34:45	00:35:15	DeepSeek 关于 shared expert 数量的消融实验
+fig_17_load_balancing_loss	frame_0199	00:49:30	00:50:00	Switch Transformer 负载均衡损失 f·p 内积形式
+fig_18_aux_loss_free	frame_0216	00:53:45	00:54:15	DeepSeek V3 auxiliary-loss-free balancing：学习偏置 b_i
+fig_19_routing_collapse	frame_0237	00:58:45	00:59:15	不做负载均衡时的 routing collapse：少数专家被过度使用
+fig_20_expert_parallel_arch	frame_0241	00:59:45	01:00:15	专家并行架构：router 后做 all-to-all dispatch
+fig_21_token_dropping	frame_0257	01:03:45	01:04:15	Token dropping：专家容量溢出时丢弃 token
+fig_22_z_loss	frame_0268	01:06:30	01:07:00	Z-loss：对 router softmax logits 加正则提升训练稳定性
+fig_23_v2_236b	frame_0289	01:11:45	01:12:15	DeepSeek V2：236B 总参数，21B 激活参数
+fig_24_communication_cost	frame_0296	01:13:30	01:14:00	专家并行的通信开销分析：input + output communication
+fig_25_v3_671b	frame_0300	01:14:15	01:14:45	DeepSeek V3：671B 总参数，37B 激活参数
+fig_26_comm_loss	frame_0307	01:16:15	01:16:45	通信均衡损失（communication balancing loss）
+fig_27_mla	frame_0310	01:17:00	01:17:30	MLA（Multi-head Latent Attention）：用低维投影压缩 KV cache
+fig_28_mla_kv_compress	frame_0315	01:18:15	01:18:45	MLA 的 KV cache 压缩机制：latent vector 上/下投影
+fig_29_mtp	frame_0322	01:20:15	01:20:45	MTP（Multi-Token Prediction）：额外头预测下一个 token
